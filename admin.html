@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Karnival Sukan KKM 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --navy:#0f2942; --navy-light:#1a3c5e; --gold:#c9962c; --bg:#f4f6f8;
+    --card:#ffffff; --border:#dde3e9; --text:#1c2733; --muted:#6b7785;
+    --danger:#b8433a; --success:#2f7d5a;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);}
+  header{background:var(--navy);color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;}
+  header h1{font-size:18px;margin:0;font-weight:600;}
+  header .sub{color:#9fb3c8;font-size:12px;}
+  #logoutBtn{background:transparent;border:1px solid #4a6178;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;}
+  #logoutBtn:hover{background:var(--navy-light);}
+
+  #loginScreen{max-width:360px;margin:80px auto;background:var(--card);padding:32px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.08);}
+  #loginScreen h2{margin-top:0;font-size:17px;color:var(--navy);}
+  #loginScreen input{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--border);border-radius:6px;font-size:14px;}
+  #loginScreen button{width:100%;padding:10px;background:var(--navy);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;}
+  #loginScreen button:hover{background:var(--navy-light);}
+  #loginError{color:var(--danger);font-size:13px;margin-top:8px;display:none;}
+
+  .container{max-width:1050px;margin:24px auto;padding:0 16px;}
+  .tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+  .tab-btn{padding:9px 18px;border:1px solid var(--border);background:#fff;border-radius:6px;cursor:pointer;font-size:14px;color:var(--muted);}
+  .tab-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .panel{display:none;background:var(--card);border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  .panel.active{display:block;}
+  .panel h2{margin-top:0;font-size:16px;color:var(--navy);}
+  .hint{color:var(--muted);font-size:13px;margin-top:-8px;margin-bottom:16px;}
+
+  form.entry-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field.full{grid-column:1/-1;}
+  .field label{font-size:12px;color:var(--muted);}
+  .field input,.field select,.field textarea{padding:9px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;}
+  .field input[type="color"]{padding:3px;height:38px;}
+  .field textarea{resize:vertical;min-height:60px;}
+  .field.checkbox{flex-direction:row;align-items:center;gap:8px;}
+  .field.checkbox input{width:auto;}
+  .form-actions{grid-column:1/-1;display:flex;gap:10px;align-items:center;}
+  .btn-primary{background:var(--navy);color:#fff;border:none;padding:9px 20px;border-radius:6px;cursor:pointer;font-size:14px;}
+  .btn-primary:hover{background:var(--navy-light);}
+  .btn-cancel{background:transparent;color:var(--muted);border:1px solid var(--border);padding:9px 16px;border-radius:6px;cursor:pointer;font-size:14px;}
+  .status-msg{font-size:13px;}
+  .status-msg.ok{color:var(--success);}
+  .status-msg.err{color:var(--danger);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;}
+  tr:hover{background:#fafbfc;}
+  .row-actions button{border:none;background:none;cursor:pointer;font-size:13px;padding:2px 6px;}
+  .row-actions .edit{color:var(--navy);}
+  .row-actions .del{color:var(--danger);}
+  .empty-note{color:var(--muted);font-size:13px;padding:12px 0;}
+  .swatch{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:6px;border:1px solid rgba(0,0,0,.1);}
+  .badge-penting{background:#fdecea;color:var(--danger);font-size:11px;padding:2px 6px;border-radius:4px;}
+  .gallery-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:16px;}
+  .gallery-preview .item{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff;}
+  .gallery-preview img{width:100%;height:100px;object-fit:cover;display:block;}
+  .gallery-preview .caption{padding:6px 8px;font-size:12px;}
+  .gallery-preview .caption button{margin-top:4px;font-size:12px;color:var(--danger);border:none;background:none;cursor:pointer;padding:0;}
+</style>
+</head>
+<body>
+
+<!-- ========================= LOGIN SCREEN ========================= -->
+<div id="loginScreen">
+  <h2>Log Masuk Admin — Karnival Sukan KKM 2026</h2>
+  <input type="email" id="loginEmail" placeholder="Emel">
+  <input type="password" id="loginPassword" placeholder="Kata laluan">
+  <button id="loginBtn">Log Masuk</button>
+  <div id="loginError">Emel atau kata laluan salah.</div>
+</div>
+
+<!-- ========================= MAIN APP ========================= -->
+<div id="app" style="display:none;">
+  <header>
+    <div>
+      <h1>Admin Panel — Karnival Sukan KKM 2026</h1>
+      <div class="sub" id="whoami"></div>
+    </div>
+    <button id="logoutBtn">Log Keluar</button>
+  </header>
+  <div id="sessionBar" style="background:#e9edf1;color:#5a6b7a;font-size:12px;padding:5px 24px;text-align:right;">
+    Sesi akan tamat automatik dalam <span id="sessionCountdown">30:00</span> jika tiada aktiviti
+  </div>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="sukan">Sukan</button>
+      <button class="tab-btn" data-tab="keputusan">Keputusan</button>
+      <button class="tab-btn" data-tab="pingat">Pingat</button>
+      <button class="tab-btn" data-tab="pasukan">Pasukan</button>
+      <button class="tab-btn" data-tab="info">Info</button>
+      <button class="tab-btn" data-tab="galeri">Galeri</button>
+    </div>
+
+    <!-- ---------------- SUKAN ---------------- -->
+    <div class="panel active" id="panel-sukan">
+      <h2>Jadual Sukan</h2>
+      <p class="hint">Tambah acara satu-satu ikut apa yang confirm. "Kategori Sukan" akan jadi pilihan dalam tab Keputusan; "Nama Acara" akan jadi pilihan dalam tab Pingat.</p>
+      <form class="entry-form" id="form-sukan">
+        <input type="hidden" id="sukan-id">
+        <div class="field">
+          <label>Nama Acara</label>
+          <input type="text" id="sukan-nama-acara" placeholder="cth: Triples Lelaki - Suku Akhir" required>
+        </div>
+        <div class="field">
+          <label>Kategori Sukan</label>
+          <input type="text" id="sukan-kategori" placeholder="cth: Triples, Open Fours" list="kategori-list" required>
+          <datalist id="kategori-list"></datalist>
+        </div>
+        <div class="field">
+          <label>Tarikh</label>
+          <input type="date" id="sukan-tarikh">
+        </div>
+        <div class="field">
+          <label>Masa</label>
+          <input type="time" id="sukan-masa">
+        </div>
+        <div class="field">
+          <label>Lokasi</label>
+          <input type="text" id="sukan-lokasi" placeholder="cth: Dewan Sukan Utama">
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="sukan-status">
+            <option value="akan_datang">Akan Datang</option>
+            <option value="sedang_berlangsung">Sedang Berlangsung</option>
+            <option value="selesai">Selesai</option>
+            <option value="ditangguhkan">Ditangguhkan</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label>Keputusan (ringkasan teks, opsyenal)</label>
+          <textarea id="sukan-keputusan" placeholder="cth: Johor menang 3-1 menentang Selangor di final"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Simpan Sukan</button>
+          <button type="button" class="btn-cancel" id="sukan-cancel" style="display:none;">Batal Edit</button>
+          <span class="status-msg" id="sukan-status-msg"></span>
+        </div>
+      </form>
+      <table id="sukan-table"><thead><tr>
+        <th>Nama Acara</th><th>Kategori</th><th>Tarikh</th><th>Status</th><th></th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+
+    <!-- ---------------- KEPUTUSAN (perlawanan) ---------------- -->
+    <div class="panel" id="panel-keputusan">
+      <h2>Masukkan / Kemaskini Keputusan Perlawanan</h2>
+      <form class="entry-form" id="form-keputusan">
+        <input type="hidden" id="keputusan-id">
+        <div class="field">
+          <label>Kategori Sukan</label>
+          <select id="keputusan-kategori" required>
+            <option value="">-- pilih --</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Pusingan</label>
+          <input type="text" id="keputusan-pusingan" placeholder="cth: Suku Akhir">
+        </div>
+        <div class="field">
+          <label>Pasukan A</label>
+          <select id="keputusan-pasukan-a" required></select>
+        </div>
+        <div class="field">
+          <label>Pasukan B</label>
+          <select id="keputusan-pasukan-b" required></select>
+        </div>
+        <div class="field">
+          <label>Skor Pasukan A</label>
+          <input type="number" id="keputusan-skor-a" min="0">
+        </div>
+        <div class="field">
+          <label>Skor Pasukan B</label>
+          <input type="number" id="keputusan-skor-b" min="0">
+        </div>
+        <div class="field">
+          <label>Tarikh</label>
+          <input type="date" id="keputusan-tarikh">
+        </div>
+        <div class="field">
+          <label>Masa</label>
+          <input type="time" id="keputusan-masa">
+        </div>
+        <div class="field">
+          <label>Lokasi</label>
+          <input type="text" id="keputusan-lokasi">
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="keputusan-status">
+            <option value="akan_datang">Akan Datang</option>
+            <option value="sedang_berlangsung">Sedang Berlangsung</option>
+            <option value="selesai">Selesai</option>
+            <option value="ditangguhkan">Ditangguhkan</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label>Catatan (opsyenal)</label>
+          <textarea id="keputusan-catatan"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Simpan Keputusan</button>
+          <button type="button" class="btn-cancel" id="keputusan-cancel" style="display:none;">Batal Edit</button>
+          <span class="status-msg" id="keputusan-status-msg"></span>
+        </div>
+      </form>
+      <table id="keputusan-table"><thead><tr>
+        <th>Kategori</th><th>Pusingan</th><th>Pasukan A</th><th>Skor</th><th>Pasukan B</th><th>Tarikh</th><th>Status</th><th></th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+
+    <!-- ---------------- PINGAT ---------------- -->
+    <div class="panel" id="panel-pingat">
+      <h2>Rekod Pingat Rasmi</h2>
+      <p class="hint">Isi hanya bila keputusan muktamad sesuatu acara dah disahkan. Kiraan pingat (pingat.html) auto-kemaskini realtime dari sini.</p>
+      <form class="entry-form" id="form-pingat">
+        <input type="hidden" id="pingat-id">
+        <div class="field">
+          <label>Acara Sukan</label>
+          <select id="pingat-sukan" required>
+            <option value="">-- pilih acara --</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Kategori (auto, boleh ubah)</label>
+          <input type="text" id="pingat-kategori">
+        </div>
+        <div class="field">
+          <label>Pasukan (Negeri)</label>
+          <select id="pingat-pasukan" required></select>
+        </div>
+        <div class="field">
+          <label>Jenis Pingat</label>
+          <select id="pingat-jenis" required>
+            <option value="">-- pilih --</option>
+            <option value="emas">Emas</option>
+            <option value="perak">Perak</option>
+            <option value="gangsa">Gangsa</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Simpan Pingat</button>
+          <button type="button" class="btn-cancel" id="pingat-cancel" style="display:none;">Batal Edit</button>
+          <span class="status-msg" id="pingat-status-msg"></span>
+        </div>
+      </form>
+      <table id="pingat-table"><thead><tr>
+        <th>Acara</th><th>Kategori</th><th>Pasukan</th><th>Jenis Pingat</th><th></th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+
+    <!-- ---------------- PASUKAN ---------------- -->
+    <div class="panel" id="panel-pasukan">
+      <h2>Senarai Pasukan (Ikut Negeri)</h2>
+      <form class="entry-form" id="form-pasukan">
+        <input type="hidden" id="pasukan-id">
+        <div class="field">
+          <label>Nama Pasukan / Negeri</label>
+          <input type="text" id="pasukan-nama" placeholder="cth: Selangor, WPKL" required>
+        </div>
+        <div class="field">
+          <label>Warna Pasukan</label>
+          <input type="color" id="pasukan-warna" value="#00A99D">
+        </div>
+        <div class="field full">
+          <label>Logo URL (opsyenal)</label>
+          <input type="text" id="pasukan-logo" placeholder="https://...">
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Simpan Pasukan</button>
+          <button type="button" class="btn-cancel" id="pasukan-cancel" style="display:none;">Batal Edit</button>
+          <span class="status-msg" id="pasukan-status-msg"></span>
+        </div>
+      </form>
+      <table id="pasukan-table"><thead><tr><th>Nama</th><th>Warna</th><th>Logo</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <!-- ---------------- INFO ---------------- -->
+    <div class="panel" id="panel-info">
+      <h2>Info / Pengumuman</h2>
+      <form class="entry-form" id="form-info">
+        <input type="hidden" id="info-id">
+        <div class="field full">
+          <label>Tajuk</label>
+          <input type="text" id="info-tajuk" required>
+        </div>
+        <div class="field full">
+          <label>Kandungan</label>
+          <textarea id="info-kandungan" required></textarea>
+        </div>
+        <div class="field checkbox full">
+          <input type="checkbox" id="info-penting">
+          <label>Tandakan sebagai pengumuman PENTING</label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Simpan Info</button>
+          <button type="button" class="btn-cancel" id="info-cancel" style="display:none;">Batal Edit</button>
+          <span class="status-msg" id="info-status-msg"></span>
+        </div>
+      </form>
+      <table id="info-table"><thead><tr><th>Tajuk</th><th></th><th>Tarikh</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <!-- ---------------- GALERI ---------------- -->
+    <div class="panel" id="panel-galeri">
+      <h2>Galeri Gambar</h2>
+      <form class="entry-form" id="form-galeri">
+        <div class="field">
+          <label>Tajuk / Caption</label>
+          <input type="text" id="galeri-tajuk" placeholder="cth: Perlawanan Triples - Hari 2">
+        </div>
+        <div class="field">
+          <label>Acara Sukan (opsyenal)</label>
+          <select id="galeri-sukan">
+            <option value="">-- tiada --</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label>Pilih Gambar</label>
+          <input type="file" id="galeri-file" accept="image/*" required>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Muat Naik Gambar</button>
+          <span class="status-msg" id="galeri-status-msg"></span>
+        </div>
+      </form>
+      <div class="gallery-preview" id="galeri-preview"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   KONFIGURASI SUPABASE
+   ================================================================ */
+const SUPABASE_URL = "https://tlxvkplyzhrqtulnjujp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRseHZrcGx5emhycXR1bG5qdWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4Njc5ODcsImV4cCI6MjA5ODQ0Mzk4N30.pe5VDYqU134vXWFd9w8Ajtu-4TlxFiSj_Zr6oQ04IyI";
+const GALERI_BUCKET = "galeri"; // nama Supabase Storage bucket
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------- AUTH ---------- */
+const loginScreen = document.getElementById("loginScreen");
+const app = document.getElementById("app");
+const loginError = document.getElementById("loginError");
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  loginError.style.display = "none";
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    loginError.textContent = error.message;
+    loginError.style.display = "block";
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await sb.auth.signOut();
+});
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    loginScreen.style.display = "none";
+    app.style.display = "block";
+    document.getElementById("whoami").textContent = "Log masuk sebagai: " + session.user.email;
+    loadAll();
+    startSessionTimer();
+  } else {
+    loginScreen.style.display = "block";
+    app.style.display = "none";
+    stopSessionTimer();
+  }
+});
+
+/* ================= SESI IDLE / AUTO LOG KELUAR ================= */
+const SESSION_TIMEOUT_MINUTES = 30; // <-- tukar di sini kalau nak ubah tempoh
+let idleSeconds = 0;
+let sessionTimerInterval = null;
+
+function resetIdleTimer() {
+  idleSeconds = 0;
+}
+
+function startSessionTimer() {
+  idleSeconds = 0;
+  if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+  sessionTimerInterval = setInterval(async () => {
+    idleSeconds++;
+    const totalSeconds = SESSION_TIMEOUT_MINUTES * 60;
+    const remaining = Math.max(totalSeconds - idleSeconds, 0);
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+    const countdownEl = document.getElementById("sessionCountdown");
+    if (countdownEl) countdownEl.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
+
+    if (idleSeconds >= totalSeconds) {
+      clearInterval(sessionTimerInterval);
+      await sb.auth.signOut();
+      alert("Sesi anda tamat sebab tiada aktiviti. Sila log masuk semula.");
+    }
+  }, 1000);
+
+  // reset idle timer bila ada aktiviti (klik, taip, scroll, gerak tetikus)
+  ["mousemove", "mousedown", "keydown", "scroll", "touchstart"].forEach(evt => {
+    document.addEventListener(evt, resetIdleTimer);
+  });
+}
+
+function stopSessionTimer() {
+  if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+  ["mousemove", "mousedown", "keydown", "scroll", "touchstart"].forEach(evt => {
+    document.removeEventListener(evt, resetIdleTimer);
+  });
+}
+
+/* ---------- TABS ---------- */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+function setMsg(id, text, ok = true) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = "status-msg " + (ok ? "ok" : "err");
+  setTimeout(() => { el.textContent = ""; }, 3500);
+}
+const statusLabel = { akan_datang: "Akan Datang", sedang_berlangsung: "Sedang Berlangsung", selesai: "Selesai", ditangguhkan: "Ditangguhkan" };
+
+async function loadAll() {
+  await loadPasukan();
+  await loadSukan();
+  loadKeputusan();
+  loadPingat();
+  loadInfo();
+  loadGaleri();
+}
+
+/* ================= PASUKAN ================= */
+async function loadPasukan() {
+  const { data, error } = await sb.from("pasukan").select("*").order("nama");
+  const tbody = document.querySelector("#pasukan-table tbody");
+  tbody.innerHTML = "";
+
+  const selA = document.getElementById("keputusan-pasukan-a");
+  const selB = document.getElementById("keputusan-pasukan-b");
+  const selPingat = document.getElementById("pingat-pasukan");
+  selA.innerHTML = '<option value="">-- pilih --</option>';
+  selB.innerHTML = '<option value="">-- pilih --</option>';
+  selPingat.innerHTML = '<option value="">-- pilih --</option>';
+
+  if (error) { tbody.innerHTML = `<tr><td colspan="4" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
+  if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="empty-note">Belum ada pasukan.</td></tr>`; return; }
+
+  data.forEach(row => {
+    tbody.innerHTML += `<tr>
+      <td>${row.nama}</td>
+      <td><span class="swatch" style="background:${row.warna || '#ccc'}"></span>${row.warna || ""}</td>
+      <td>${row.logo_url ? `<a href="${row.logo_url}" target="_blank">lihat</a>` : ""}</td>
+      <td class="row-actions">
+        <button class="edit" onclick='editPasukan(${JSON.stringify(row)})'>Edit</button>
+        <button class="del" onclick="deletePasukan('${row.id}')">Padam</button>
+      </td></tr>`;
+    const opt = `<option value="${row.id}">${row.nama}</option>`;
+    selA.innerHTML += opt;
+    selB.innerHTML += opt;
+    selPingat.innerHTML += opt;
+  });
+}
+
+document.getElementById("form-pasukan").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("pasukan-id").value;
+  const payload = {
+    nama: document.getElementById("pasukan-nama").value.trim(),
+    warna: document.getElementById("pasukan-warna").value,
+    logo_url: document.getElementById("pasukan-logo").value.trim() || null,
+  };
+  const { error } = id
+    ? await sb.from("pasukan").update(payload).eq("id", id)
+    : await sb.from("pasukan").insert(payload);
+  if (error) return setMsg("pasukan-status-msg", "Ralat: " + error.message, false);
+  setMsg("pasukan-status-msg", "Berjaya disimpan.");
+  resetPasukanForm();
+  loadPasukan();
+});
+
+function editPasukan(row) {
+  document.getElementById("pasukan-id").value = row.id;
+  document.getElementById("pasukan-nama").value = row.nama || "";
+  document.getElementById("pasukan-warna").value = row.warna || "#00A99D";
+  document.getElementById("pasukan-logo").value = row.logo_url || "";
+  document.getElementById("pasukan-cancel").style.display = "inline-block";
+}
+function resetPasukanForm() {
+  document.getElementById("form-pasukan").reset();
+  document.getElementById("pasukan-id").value = "";
+  document.getElementById("pasukan-warna").value = "#00A99D";
+  document.getElementById("pasukan-cancel").style.display = "none";
+}
+document.getElementById("pasukan-cancel").addEventListener("click", resetPasukanForm);
+
+async function deletePasukan(id) {
+  if (!confirm("Padam pasukan ini?")) return;
+  const { error } = await sb.from("pasukan").delete().eq("id", id);
+  if (error) return setMsg("pasukan-status-msg", "Ralat: " + error.message, false);
+  loadPasukan();
+}
+
+/* ================= SUKAN ================= */
+async function loadSukan() {
+  const { data, error } = await sb.from("sukan").select("*").order("tarikh", { ascending: true });
+  const tbody = document.querySelector("#sukan-table tbody");
+  tbody.innerHTML = "";
+
+  const kategoriSel = document.getElementById("keputusan-kategori");
+  const kategoriList = document.getElementById("kategori-list");
+  const pingatSukanSel = document.getElementById("pingat-sukan");
+  const galeriSukanSel = document.getElementById("galeri-sukan");
+  const curKategori = kategoriSel.value;
+  const curPingatSukan = pingatSukanSel.value;
+  const curGaleriSukan = galeriSukanSel.value;
+  kategoriSel.innerHTML = '<option value="">-- pilih --</option>';
+  kategoriList.innerHTML = "";
+  pingatSukanSel.innerHTML = '<option value="">-- pilih acara --</option>';
+  galeriSukanSel.innerHTML = '<option value="">-- tiada --</option>';
+
+  if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
+  if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Belum ada sukan dimasukkan.</td></tr>`; return; }
+
+  const kategoriSeen = new Set();
+
+  data.forEach(row => {
+    tbody.innerHTML += `<tr>
+      <td>${row.nama_acara}</td>
+      <td>${row.kategori_sukan || ""}</td>
+      <td>${row.tarikh || ""}</td>
+      <td>${statusLabel[row.status] || row.status || ""}</td>
+      <td class="row-actions">
+        <button class="edit" onclick='editSukan(${JSON.stringify(row)})'>Edit</button>
+        <button class="del" onclick="deleteSukan('${row.id}')">Padam</button>
+      </td></tr>`;
+
+    if (row.kategori_sukan && !kategoriSeen.has(row.kategori_sukan)) {
+      kategoriSeen.add(row.kategori_sukan);
+      kategoriSel.innerHTML += `<option value="${row.kategori_sukan}">${row.kategori_sukan}</option>`;
+      kategoriList.innerHTML += `<option value="${row.kategori_sukan}">`;
+    }
+    pingatSukanSel.innerHTML += `<option value="${row.id}" data-kategori="${row.kategori_sukan || ''}">${row.nama_acara}</option>`;
+    galeriSukanSel.innerHTML += `<option value="${row.id}">${row.nama_acara}</option>`;
+  });
+
+  if (curKategori) kategoriSel.value = curKategori;
+  if (curPingatSukan) pingatSukanSel.value = curPingatSukan;
+  if (curGaleriSukan) galeriSukanSel.value = curGaleriSukan;
+}
+
+// bila pilih acara dalam tab Pingat, auto-isi kategori (boleh ubah manual)
+document.getElementById("pingat-sukan").addEventListener("change", (e) => {
+  const opt = e.target.selectedOptions[0];
+  document.getElementById("pingat-kategori").value = opt ? (opt.dataset.kategori || "") : "";
+});
+
+document.getElementById("form-sukan").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("sukan-id").value;
+  const payload = {
+    nama_acara: document.getElementById("sukan-nama-acara").value.trim(),
+    kategori_sukan: document.getElementById("sukan-kategori").value.trim(),
+    tarikh: document.getElementById("sukan-tarikh").value || null,
+    masa: document.getElementById("sukan-masa").value || null,
+    lokasi: document.getElementById("sukan-lokasi").value.trim() || null,
+    status: document.getElementById("sukan-status").value,
+    keputusan: document.getElementById("sukan-keputusan").value.trim() || null,
+  };
+  const { error } = id
+    ? await sb.from("sukan").update(payload).eq("id", id)
+    : await sb.from("sukan").insert(payload);
+  if (error) return setMsg("sukan-status-msg", "Ralat: " + error.message, false);
+  setMsg("sukan-status-msg", "Sukan disimpan.");
+  resetSukanForm();
+  loadSukan();
+});
+
+function editSukan(row) {
+  document.getElementById("sukan-id").value = row.id;
+  document.getElementById("sukan-nama-acara").value = row.nama_acara || "";
+  document.getElementById("sukan-kategori").value = row.kategori_sukan || "";
+  document.getElementById("sukan-tarikh").value = row.tarikh || "";
+  document.getElementById("sukan-masa").value = row.masa || "";
+  document.getElementById("sukan-lokasi").value = row.lokasi || "";
+  document.getElementById("sukan-status").value = row.status || "akan_datang";
+  document.getElementById("sukan-keputusan").value = row.keputusan || "";
+  document.getElementById("sukan-cancel").style.display = "inline-block";
+}
+function resetSukanForm() {
+  document.getElementById("form-sukan").reset();
+  document.getElementById("sukan-id").value = "";
+  document.getElementById("sukan-cancel").style.display = "none";
+}
+document.getElementById("sukan-cancel").addEventListener("click", resetSukanForm);
+
+async function deleteSukan(id) {
+  if (!confirm("Padam sukan ini?")) return;
+  const { error } = await sb.from("sukan").delete().eq("id", id);
+  if (error) return setMsg("sukan-status-msg", "Ralat: " + error.message, false);
+  loadSukan();
+}
+
+/* ================= KEPUTUSAN (perlawanan) ================= */
+async function loadKeputusan() {
+  const { data, error } = await sb.from("perlawanan").select("*").order("tarikh", { ascending: false });
+  const tbody = document.querySelector("#keputusan-table tbody");
+  tbody.innerHTML = "";
+  if (error) { tbody.innerHTML = `<tr><td colspan="8" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
+  if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="empty-note">Belum ada keputusan.</td></tr>`; return; }
+
+  const { data: pasukanList } = await sb.from("pasukan").select("*");
+  const namaPasukan = id => (pasukanList || []).find(p => p.id === id)?.nama || "-";
+
+  data.forEach(row => {
+    tbody.innerHTML += `<tr>
+      <td>${row.kategori_sukan || ""}</td>
+      <td>${row.pusingan || ""}</td>
+      <td>${namaPasukan(row.pasukan_a_id)}</td>
+      <td>${row.skor_a ?? "-"} : ${row.skor_b ?? "-"}</td>
+      <td>${namaPasukan(row.pasukan_b_id)}</td>
+      <td>${row.tarikh || ""}</td>
+      <td>${statusLabel[row.status] || row.status || ""}</td>
+      <td class="row-actions">
+        <button class="edit" onclick='editKeputusan(${JSON.stringify(row)})'>Edit</button>
+        <button class="del" onclick="deleteKeputusan('${row.id}')">Padam</button>
+      </td></tr>`;
+  });
+}
+
+document.getElementById("form-keputusan").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("keputusan-id").value;
+  const payload = {
+    kategori_sukan: document.getElementById("keputusan-kategori").value,
+    pusingan: document.getElementById("keputusan-pusingan").value.trim() || null,
+    pasukan_a_id: document.getElementById("keputusan-pasukan-a").value,
+    pasukan_b_id: document.getElementById("keputusan-pasukan-b").value,
+    skor_a: document.getElementById("keputusan-skor-a").value === "" ? null : Number(document.getElementById("keputusan-skor-a").value),
+    skor_b: document.getElementById("keputusan-skor-b").value === "" ? null : Number(document.getElementById("keputusan-skor-b").value),
+    tarikh: document.getElementById("keputusan-tarikh").value || null,
+    masa: document.getElementById("keputusan-masa").value || null,
+    lokasi: document.getElementById("keputusan-lokasi").value.trim() || null,
+    status: document.getElementById("keputusan-status").value,
+    catatan: document.getElementById("keputusan-catatan").value.trim() || null,
+  };
+  const { error } = id
+    ? await sb.from("perlawanan").update(payload).eq("id", id)
+    : await sb.from("perlawanan").insert(payload);
+  if (error) return setMsg("keputusan-status-msg", "Ralat: " + error.message, false);
+  setMsg("keputusan-status-msg", "Keputusan disimpan.");
+  resetKeputusanForm();
+  loadKeputusan();
+});
+
+function editKeputusan(row) {
+  document.getElementById("keputusan-id").value = row.id;
+  document.getElementById("keputusan-kategori").value = row.kategori_sukan || "";
+  document.getElementById("keputusan-pusingan").value = row.pusingan || "";
+  document.getElementById("keputusan-pasukan-a").value = row.pasukan_a_id || "";
+  document.getElementById("keputusan-pasukan-b").value = row.pasukan_b_id || "";
+  document.getElementById("keputusan-skor-a").value = row.skor_a ?? "";
+  document.getElementById("keputusan-skor-b").value = row.skor_b ?? "";
+  document.getElementById("keputusan-tarikh").value = row.tarikh || "";
+  document.getElementById("keputusan-masa").value = row.masa || "";
+  document.getElementById("keputusan-lokasi").value = row.lokasi || "";
+  document.getElementById("keputusan-status").value = row.status || "akan_datang";
+  document.getElementById("keputusan-catatan").value = row.catatan || "";
+  document.getElementById("keputusan-cancel").style.display = "inline-block";
+}
+function resetKeputusanForm() {
+  document.getElementById("form-keputusan").reset();
+  document.getElementById("keputusan-id").value = "";
+  document.getElementById("keputusan-cancel").style.display = "none";
+}
+document.getElementById("keputusan-cancel").addEventListener("click", resetKeputusanForm);
+
+async function deleteKeputusan(id) {
+  if (!confirm("Padam keputusan ini?")) return;
+  const { error } = await sb.from("perlawanan").delete().eq("id", id);
+  if (error) return setMsg("keputusan-status-msg", "Ralat: " + error.message, false);
+  loadKeputusan();
+}
+
+/* ================= PINGAT ================= */
+async function loadPingat() {
+  const { data, error } = await sb.from("pingat").select("*").order("dianugerah_pada", { ascending: false });
+  const tbody = document.querySelector("#pingat-table tbody");
+  tbody.innerHTML = "";
+  if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
+  if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Belum ada rekod pingat.</td></tr>`; return; }
+
+  const { data: pasukanList } = await sb.from("pasukan").select("*");
+  const { data: sukanList } = await sb.from("sukan").select("*");
+  const namaPasukan = id => (pasukanList || []).find(p => p.id === id)?.nama || "-";
+  const namaAcara = id => (sukanList || []).find(s => s.id === id)?.nama_acara || "-";
+  const jenisLabel = { emas: "🥇 Emas", perak: "🥈 Perak", gangsa: "🥉 Gangsa" };
+
+  data.forEach(row => {
+    tbody.innerHTML += `<tr>
+      <td>${namaAcara(row.sukan_id)}</td>
+      <td>${row.kategori || ""}</td>
+      <td>${namaPasukan(row.pasukan_id)}</td>
+      <td>${jenisLabel[row.jenis] || row.jenis || ""}</td>
+      <td class="row-actions">
+        <button class="edit" onclick='editPingat(${JSON.stringify(row)})'>Edit</button>
+        <button class="del" onclick="deletePingat('${row.id}')">Padam</button>
+      </td></tr>`;
+  });
+}
+
+document.getElementById("form-pingat").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("pingat-id").value;
+  const payload = {
+    sukan_id: document.getElementById("pingat-sukan").value,
+    kategori: document.getElementById("pingat-kategori").value.trim() || null,
+    pasukan_id: document.getElementById("pingat-pasukan").value,
+    jenis: document.getElementById("pingat-jenis").value,
+  };
+  const { error } = id
+    ? await sb.from("pingat").update(payload).eq("id", id)
+    : await sb.from("pingat").insert(payload);
+  if (error) return setMsg("pingat-status-msg", "Ralat: " + error.message, false);
+  setMsg("pingat-status-msg", "Pingat disimpan.");
+  resetPingatForm();
+  loadPingat();
+});
+
+function editPingat(row) {
+  document.getElementById("pingat-id").value = row.id;
+  document.getElementById("pingat-sukan").value = row.sukan_id || "";
+  document.getElementById("pingat-kategori").value = row.kategori || "";
+  document.getElementById("pingat-pasukan").value = row.pasukan_id || "";
+  document.getElementById("pingat-jenis").value = row.jenis || "";
+  document.getElementById("pingat-cancel").style.display = "inline-block";
+}
+function resetPingatForm() {
+  document.getElementById("form-pingat").reset();
+  document.getElementById("pingat-id").value = "";
+  document.getElementById("pingat-cancel").style.display = "none";
+}
+document.getElementById("pingat-cancel").addEventListener("click", resetPingatForm);
+
+async function deletePingat(id) {
+  if (!confirm("Padam rekod pingat ini? (Kiraan pingat akan terus berkurang selepas ini)")) return;
+  const { error } = await sb.from("pingat").delete().eq("id", id);
+  if (error) return setMsg("pingat-status-msg", "Ralat: " + error.message, false);
+  loadPingat();
+}
+
+/* ================= INFO ================= */
+async function loadInfo() {
+  const { data, error } = await sb.from("info").select("*").order("dibuat_pada", { ascending: false });
+  const tbody = document.querySelector("#info-table tbody");
+  tbody.innerHTML = "";
+  if (error) { tbody.innerHTML = `<tr><td colspan="4" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
+  if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="empty-note">Belum ada info.</td></tr>`; return; }
+  data.forEach(row => {
+    const tarikh = row.dibuat_pada ? new Date(row.dibuat_pada).toLocaleDateString("ms-MY") : "";
+    tbody.innerHTML += `<tr>
+      <td>${row.tajuk}</td>
+      <td>${row.penting ? '<span class="badge-penting">PENTING</span>' : ""}</td>
+      <td>${tarikh}</td>
+      <td class="row-actions">
+        <button class="edit" onclick='editInfo(${JSON.stringify(row)})'>Edit</button>
+        <button class="del" onclick="deleteInfo('${row.id}')">Padam</button>
+      </td></tr>`;
+  });
+}
+
+document.getElementById("form-info").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("info-id").value;
+  const payload = {
+    tajuk: document.getElementById("info-tajuk").value.trim(),
+    kandungan: document.getElementById("info-kandungan").value.trim(),
+    penting: document.getElementById("info-penting").checked,
+  };
+  const { error } = id
+    ? await sb.from("info").update(payload).eq("id", id)
+    : await sb.from("info").insert(payload);
+  if (error) return setMsg("info-status-msg", "Ralat: " + error.message, false);
+  setMsg("info-status-msg", "Info disimpan.");
+  resetInfoForm();
+  loadInfo();
+});
+
+function editInfo(row) {
+  document.getElementById("info-id").value = row.id;
+  document.getElementById("info-tajuk").value = row.tajuk || "";
+  document.getElementById("info-kandungan").value = row.kandungan || "";
+  document.getElementById("info-penting").checked = !!row.penting;
+  document.getElementById("info-cancel").style.display = "inline-block";
+}
+function resetInfoForm() {
+  document.getElementById("form-info").reset();
+  document.getElementById("info-id").value = "";
+  document.getElementById("info-cancel").style.display = "none";
+}
+document.getElementById("info-cancel").addEventListener("click", resetInfoForm);
+
+async function deleteInfo(id) {
+  if (!confirm("Padam info ini?")) return;
+  const { error } = await sb.from("info").delete().eq("id", id);
+  if (error) return setMsg("info-status-msg", "Ralat: " + error.message, false);
+  loadInfo();
+}
+
+/* ================= GALERI ================= */
+async function loadGaleri() {
+  const { data, error } = await sb.from("galeri").select("*").order("dimuat_naik_pada", { ascending: false });
+  const wrap = document.getElementById("galeri-preview");
+  wrap.innerHTML = "";
+  if (error) { wrap.innerHTML = `<div class="empty-note">Ralat: ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { wrap.innerHTML = `<div class="empty-note">Belum ada gambar.</div>`; return; }
+  data.forEach(row => {
+    const { data: urlData } = sb.storage.from(GALERI_BUCKET).getPublicUrl(row.image_path);
+    wrap.innerHTML += `<div class="item">
+      <img src="${urlData.publicUrl}" alt="${row.tajuk || ''}">
+      <div class="caption">${row.tajuk || ""}
+        <button onclick="deleteGaleri('${row.id}','${row.image_path}')">Padam</button>
+      </div></div>`;
+  });
+}
+
+document.getElementById("form-galeri").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fileInput = document.getElementById("galeri-file");
+  const file = fileInput.files[0];
+  if (!file) return;
+  const tajuk = document.getElementById("galeri-tajuk").value.trim();
+  const sukanId = document.getElementById("galeri-sukan").value || null;
+  const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
+
+  setMsg("galeri-status-msg", "Sedang muat naik...", true);
+  const { error: uploadError } = await sb.storage.from(GALERI_BUCKET).upload(fileName, file);
+  if (uploadError) return setMsg("galeri-status-msg", "Ralat muat naik: " + uploadError.message, false);
+
+  const payload = {
+    tajuk: tajuk || null,
+    image_path: fileName,
+    sukan_id: sukanId,
+  };
+  const { error } = await sb.from("galeri").insert(payload);
+  if (error) return setMsg("galeri-status-msg", "Ralat: " + error.message, false);
+  setMsg("galeri-status-msg", "Gambar berjaya dimuat naik.");
+  document.getElementById("form-galeri").reset();
+  loadGaleri();
+});
+
+async function deleteGaleri(id, imagePath) {
+  if (!confirm("Padam gambar ini?")) return;
+  await sb.storage.from(GALERI_BUCKET).remove([imagePath]);
+  const { error } = await sb.from("galeri").delete().eq("id", id);
+  if (error) return setMsg("galeri-status-msg", "Ralat: " + error.message, false);
+  loadGaleri();
+}
+</script>
+</body>
+</html>

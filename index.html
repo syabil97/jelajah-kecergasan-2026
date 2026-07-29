@@ -5,8 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Program Kecergasan KKM 2026</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+  /* Pautan log masuk admin — pin betul-betul di hujung kiri sekali, tak terikat dengan susunan nav */
+  .admin-login{
+    position:fixed;
+    right:10px;
+    top:14px;
+    z-index:1000;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:rgba(255,255,255,.9);
+    box-shadow:0 1px 4px rgba(0,0,0,.15);
+    text-decoration:none;
+    font-size:14px;
+    opacity:.6;
+    transition:opacity .15s ease;
+  }
+  .admin-login:hover{ opacity:1; }
+
+  /* Skrin phone: sembunyikan terus ikon admin — hanya nampak di desktop/monitor */
+  @media (max-width: 768px){
+    .admin-login{
+      display:none;
+    }
+  }
+</style>
 </head>
 <body>
+
+<a href="admin.html" class="admin-login" title="Log Masuk Admin">&#128274;</a>
 
 <header class="site-header">
   <nav class="nav">

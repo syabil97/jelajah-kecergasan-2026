@@ -26,8 +26,12 @@ async function muatkanJadualPingat() {
   el.innerHTML = data.map((row) => `
     <tr>
       <td>
-        <span class="team-dot" style="background:${row.warna || "#00A99D"}"></span>
-        ${escapeHtml(row.nama_pasukan)}
+        <span class="team-cell">
+          ${row.logo_url
+            ? `<img class="team-flag" src="${escapeHtml(row.logo_url)}" alt="">`
+            : `<span class="team-dot" style="background:${row.warna || "#00A99D"}"></span>`}
+          <span class="team-name">${escapeHtml(row.nama_pasukan)}</span>
+        </span>
       </td>
       <td class="col-emas">${row.emas}</td>
       <td class="col-perak">${row.perak}</td>

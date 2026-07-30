@@ -13,21 +13,26 @@ async function muatkanJadualPingat() {
     .order("gangsa", { ascending: false });
 
   if (error) {
-    el.innerHTML = `<tr><td colspan="5" class="loading-pulse">Gagal memuatkan data.</td></tr>`;
+    el.innerHTML = `<tr><td colspan="6" class="loading-pulse">Gagal memuatkan data.</td></tr>`;
     console.error(error);
     return;
   }
 
   if (!data || data.length === 0) {
-    el.innerHTML = `<tr><td colspan="5" class="loading-pulse">Belum ada pingat direkodkan.</td></tr>`;
+    el.innerHTML = `<tr><td colspan="6" class="loading-pulse">Belum ada pingat direkodkan.</td></tr>`;
     return;
   }
 
-  el.innerHTML = data.map((row) => `
+  el.innerHTML = data.map((row, i) => `
     <tr>
+      <td class="col-rank">${i + 1}</td>
       <td>
-        <span class="team-dot" style="background:${row.warna || "#00A99D"}"></span>
-        ${escapeHtml(row.nama_pasukan)}
+        <span class="team-cell">
+          ${row.logo_url
+            ? `<img class="team-flag" src="${escapeHtml(row.logo_url)}" alt="">`
+            : `<span class="team-dot" style="background:${row.warna || "#00A99D"}"></span>`}
+          <span class="team-name">${escapeHtml(row.nama_pasukan)}</span>
+        </span>
       </td>
       <td class="col-emas">${row.emas}</td>
       <td class="col-perak">${row.perak}</td>

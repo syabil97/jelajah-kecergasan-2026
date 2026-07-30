@@ -3,17 +3,48 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Program Kecergasan KKM 2026</title>
+<title>Program Promosi Kesihatan Dan Kecergasan KKM Peringkat Kebangsaan 2026</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+  /* Pautan log masuk admin — pin betul-betul di hujung kiri sekali, tak terikat dengan susunan nav */
+  .admin-login{
+    position:fixed;
+    right:24px;
+    top:14px;
+    z-index:1000;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:rgba(255,255,255,.9);
+    box-shadow:0 1px 4px rgba(0,0,0,.15);
+    text-decoration:none;
+    font-size:14px;
+    opacity:.6;
+    transition:opacity .15s ease;
+  }
+  .admin-login:hover{ opacity:1; }
+
+  /* Skrin phone: sembunyikan terus ikon admin — hanya nampak di desktop/monitor */
+  @media (max-width: 768px){
+    .admin-login{
+      display:none;
+    }
+  }
+</style>
 </head>
 <body>
+
+<a href="admin.html" class="admin-login" title="Log Masuk Admin">&#128274;</a>
 
 <header class="site-header">
   <nav class="nav">
     <a href="index.html" class="brand">
       <span>
         <span class="eyebrow">Kementerian Kesihatan Malaysia</span>
-        <span class="title">Program Kecergasan KKM 2026</span>
+        <span class="title">Program Promosi Kesihatan Dan Kecergasan KKM <br> Peringkat Kebangsaan 2026</span>
       </span>
     </a>
     <button class="nav-toggle" aria-label="Buka menu">&#9776;</button>
@@ -31,9 +62,11 @@
 <section class="hero">
   <div class="container hero-inner">
     <div>
+      <span class="eyebrow">Program Promosi Kesihatan Dan Kecergasan KKM Peringkat Kebangsaan 2026</span>
       <span class="eyebrow">14 – 20 Ogos 2026 &middot; Kompleks Sukan Negara</span>
+      <span class="eyebrow">Jabatan Kesihatan Negeri, Negeri Sembilan</span>
       <h1>Bersatu Bertanding, Sihat Bersama</h1>
-      <p>Ikuti keputusan terkini, jadual acara, kiraan pingat dan galeri gambar sepanjang Program Kecergasan KKM 2026 di sini.</p>
+      <p>Ikuti keputusan terkini, jadual acara, kiraan pingat dan galeri gambar sepanjang Program Promosi Kesihatan Dan Kecergasan KKM Peringkat Kebangsaan 2026 di sini.</p>
       <div class="hero-meta">
         <div><strong id="stat-hari">—</strong><span>Hari Karnival</span></div>
         <div><strong id="stat-acara">—</strong><span>Jumlah Acara</span></div>
@@ -85,7 +118,8 @@
 
 <footer class="site-footer">
   <div class="container">
-    <strong>Program Kecergasan KKM 2026</strong> &middot; Kementerian Kesihatan Malaysia
+    <strong>Program Promosi Kesihatan Dan Kecergasan KKM Peringkat Kebangsaan 2026</strong><br>
+    Jabatan Kesihatan Negeri, Negeri Sembilan
   </div>
 </footer>
 

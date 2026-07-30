@@ -13,18 +13,19 @@ async function muatkanJadualPingat() {
     .order("gangsa", { ascending: false });
 
   if (error) {
-    el.innerHTML = `<tr><td colspan="5" class="loading-pulse">Gagal memuatkan data.</td></tr>`;
+    el.innerHTML = `<tr><td colspan="6" class="loading-pulse">Gagal memuatkan data.</td></tr>`;
     console.error(error);
     return;
   }
 
   if (!data || data.length === 0) {
-    el.innerHTML = `<tr><td colspan="5" class="loading-pulse">Belum ada pingat direkodkan.</td></tr>`;
+    el.innerHTML = `<tr><td colspan="6" class="loading-pulse">Belum ada pingat direkodkan.</td></tr>`;
     return;
   }
 
-  el.innerHTML = data.map((row) => `
+  el.innerHTML = data.map((row, i) => `
     <tr>
+      <td class="col-rank">${i + 1}</td>
       <td>
         <span class="team-cell">
           ${row.logo_url

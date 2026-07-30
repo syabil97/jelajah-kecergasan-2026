@@ -96,11 +96,33 @@
   <div class="container">
     <div class="tabs">
       <button class="tab-btn active" data-tab="sukan">Sukan</button>
+      <button class="tab-btn" data-tab="kategori">Kategori</button>
       <button class="tab-btn" data-tab="keputusan">Keputusan</button>
       <button class="tab-btn" data-tab="pingat">Pingat</button>
       <button class="tab-btn" data-tab="pasukan">Pasukan</button>
       <button class="tab-btn" data-tab="info">Info</button>
       <button class="tab-btn" data-tab="galeri">Galeri</button>
+    </div>
+
+    <!-- ---------------- KATEGORI SUKAN ---------------- -->
+    <div class="panel" id="panel-kategori">
+      <h2>Kategori Sukan</h2>
+      <p class="hint">Senaraikan kategori sukan di sini (cth: Badminton, Bola Sepak, Larian). Kategori ini akan jadi pilihan dropdown dalam tab Sukan dan Pingat.</p>
+      <form class="entry-form" id="form-kategori">
+        <input type="hidden" id="kategori-id">
+        <div class="field full">
+          <label>Nama Kategori</label>
+          <input type="text" id="kategori-nama" placeholder="cth: Badminton" required>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Simpan Kategori</button>
+          <button type="button" class="btn-cancel" id="kategori-cancel" style="display:none;">Batal Edit</button>
+          <span class="status-msg" id="kategori-status-msg"></span>
+        </div>
+      </form>
+      <table id="kategori-table"><thead><tr>
+        <th>Nama Kategori</th><th></th>
+      </tr></thead><tbody></tbody></table>
     </div>
 
     <!-- ---------------- SUKAN ---------------- -->
@@ -115,8 +137,9 @@
         </div>
         <div class="field">
           <label>Kategori Sukan</label>
-          <input type="text" id="sukan-kategori" placeholder="cth: Triples, Open Fours" list="kategori-list" required>
-          <datalist id="kategori-list"></datalist>
+          <select id="sukan-kategori" required>
+            <option value="">-- pilih kategori --</option>
+          </select>
         </div>
         <div class="field">
           <label>Tarikh</label>
@@ -228,14 +251,20 @@
       <form class="entry-form" id="form-pingat">
         <input type="hidden" id="pingat-id">
         <div class="field">
+          <label>Kategori Sukan</label>
+          <select id="pingat-filter-kategori">
+            <option value="">-- pilih kategori --</option>
+          </select>
+        </div>
+        <div class="field">
           <label>Acara Sukan</label>
-          <select id="pingat-sukan" required>
-            <option value="">-- pilih acara --</option>
+          <select id="pingat-sukan" required disabled>
+            <option value="">-- pilih kategori dahulu --</option>
           </select>
         </div>
         <div class="field">
           <label>Kategori (auto, boleh ubah)</label>
-          <input type="text" id="pingat-kategori">
+          <input type="text" id="pingat-kategori" readonly>
         </div>
         <div class="field">
           <label>Pasukan (Negeri)</label>
@@ -447,11 +476,78 @@ const statusLabel = { akan_datang: "Akan Datang", sedang_berlangsung: "Sedang Be
 
 async function loadAll() {
   await loadPasukan();
+  await loadKategori();
   await loadSukan();
   loadKeputusan();
   loadPingat();
   loadInfo();
   loadGaleri();
+}
+
+/* ================= KATEGORI SUKAN ================= */
+let semuaKategoriCache = [];
+
+async function loadKategori() {
+  const { data, error } = await sb.from("kategori_sukan").select("*").order("nama", { ascending: true });
+  const tbody = document.querySelector("#kategori-table tbody");
+  tbody.innerHTML = "";
+  semuaKategoriCache = data || [];
+
+  const sukanKategoriSel = document.getElementById("sukan-kategori");
+  const pingatFilterKategoriSel = document.getElementById("pingat-filter-kategori");
+  const curSukanKategori = sukanKategoriSel.value;
+  const curPingatFilterKategori = pingatFilterKategoriSel.value;
+  sukanKategoriSel.innerHTML = '<option value="">-- pilih kategori --</option>';
+  pingatFilterKategoriSel.innerHTML = '<option value="">-- pilih kategori --</option>';
+
+  if (error) { tbody.innerHTML = `<tr><td colspan="2" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
+  if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="2" class="empty-note">Belum ada kategori. Sila tambah dahulu sebelum masuk data Sukan.</td></tr>`; return; }
+
+  data.forEach(row => {
+    tbody.innerHTML += `<tr>
+      <td>${row.nama}</td>
+      <td class="row-actions">
+        <button class="edit" onclick='editKategori(${JSON.stringify(row)})'>Edit</button>
+        <button class="del" onclick="deleteKategori('${row.id}')">Padam</button>
+      </td></tr>`;
+    sukanKategoriSel.innerHTML += `<option value="${row.nama}">${row.nama}</option>`;
+    pingatFilterKategoriSel.innerHTML += `<option value="${row.nama}">${row.nama}</option>`;
+  });
+
+  if (curSukanKategori) sukanKategoriSel.value = curSukanKategori;
+  if (curPingatFilterKategori) pingatFilterKategoriSel.value = curPingatFilterKategori;
+}
+
+document.getElementById("form-kategori").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("kategori-id").value;
+  const payload = { nama: document.getElementById("kategori-nama").value.trim() };
+  const { error } = id
+    ? await sb.from("kategori_sukan").update(payload).eq("id", id)
+    : await sb.from("kategori_sukan").insert(payload);
+  if (error) return setMsg("kategori-status-msg", "Ralat: " + error.message, false);
+  setMsg("kategori-status-msg", "Kategori disimpan.");
+  resetKategoriForm();
+  loadKategori();
+});
+
+function editKategori(row) {
+  document.getElementById("kategori-id").value = row.id;
+  document.getElementById("kategori-nama").value = row.nama || "";
+  document.getElementById("kategori-cancel").style.display = "inline-block";
+}
+function resetKategoriForm() {
+  document.getElementById("form-kategori").reset();
+  document.getElementById("kategori-id").value = "";
+  document.getElementById("kategori-cancel").style.display = "none";
+}
+document.getElementById("kategori-cancel").addEventListener("click", resetKategoriForm);
+
+async function deleteKategori(id) {
+  if (!confirm("Padam kategori ini? Acara sukan sedia ada yang guna kategori ni takkan terjejas, tapi anda perlu kemaskini manual.")) return;
+  const { error } = await sb.from("kategori_sukan").delete().eq("id", id);
+  if (error) return setMsg("kategori-status-msg", "Ralat: " + error.message, false);
+  loadKategori();
 }
 
 /* ================= PASUKAN ================= */
@@ -526,22 +622,22 @@ async function deletePasukan(id) {
 }
 
 /* ================= SUKAN ================= */
+let semuaSukanCache = [];
+
 async function loadSukan() {
   const { data, error } = await sb.from("sukan").select("*").order("tarikh", { ascending: true });
   const tbody = document.querySelector("#sukan-table tbody");
   tbody.innerHTML = "";
 
   const kategoriSel = document.getElementById("keputusan-kategori");
-  const kategoriList = document.getElementById("kategori-list");
-  const pingatSukanSel = document.getElementById("pingat-sukan");
   const galeriSukanSel = document.getElementById("galeri-sukan");
+  const pingatFilterKategoriSel = document.getElementById("pingat-filter-kategori");
   const curKategori = kategoriSel.value;
-  const curPingatSukan = pingatSukanSel.value;
   const curGaleriSukan = galeriSukanSel.value;
   kategoriSel.innerHTML = '<option value="">-- pilih --</option>';
-  kategoriList.innerHTML = "";
-  pingatSukanSel.innerHTML = '<option value="">-- pilih acara --</option>';
   galeriSukanSel.innerHTML = '<option value="">-- tiada --</option>';
+
+  semuaSukanCache = data || [];
 
   if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
   if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Belum ada sukan dimasukkan.</td></tr>`; return; }
@@ -562,16 +658,42 @@ async function loadSukan() {
     if (row.kategori_sukan && !kategoriSeen.has(row.kategori_sukan)) {
       kategoriSeen.add(row.kategori_sukan);
       kategoriSel.innerHTML += `<option value="${row.kategori_sukan}">${row.kategori_sukan}</option>`;
-      kategoriList.innerHTML += `<option value="${row.kategori_sukan}">`;
     }
-    pingatSukanSel.innerHTML += `<option value="${row.id}" data-kategori="${row.kategori_sukan || ''}">${row.nama_acara}</option>`;
     galeriSukanSel.innerHTML += `<option value="${row.id}">${row.nama_acara}</option>`;
   });
 
   if (curKategori) kategoriSel.value = curKategori;
-  if (curPingatSukan) pingatSukanSel.value = curPingatSukan;
   if (curGaleriSukan) galeriSukanSel.value = curGaleriSukan;
+
+  populatePingatSukanOptions(pingatFilterKategoriSel.value);
 }
+
+// Isi dropdown "Acara Sukan" ikut kategori yang dipilih dalam tab Pingat
+function populatePingatSukanOptions(kategori) {
+  const sel = document.getElementById("pingat-sukan");
+  const current = sel.value;
+
+  if (!kategori) {
+    sel.innerHTML = '<option value="">-- pilih kategori dahulu --</option>';
+    sel.disabled = true;
+    return;
+  }
+
+  sel.disabled = false;
+  sel.innerHTML = '<option value="">-- pilih acara --</option>' +
+    semuaSukanCache
+      .filter(r => r.kategori_sukan === kategori)
+      .map(r => `<option value="${r.id}" data-kategori="${r.kategori_sukan || ''}">${r.nama_acara}</option>`)
+      .join("");
+
+  if (current) sel.value = current;
+}
+
+// bila pilih kategori dalam tab Pingat, filter senarai acara & auto-isi kategori
+document.getElementById("pingat-filter-kategori").addEventListener("change", (e) => {
+  populatePingatSukanOptions(e.target.value);
+  document.getElementById("pingat-kategori").value = e.target.value || "";
+});
 
 // bila pilih acara dalam tab Pingat, auto-isi kategori (boleh ubah manual)
 document.getElementById("pingat-sukan").addEventListener("change", (e) => {
@@ -753,6 +875,8 @@ document.getElementById("form-pingat").addEventListener("submit", async (e) => {
 
 function editPingat(row) {
   document.getElementById("pingat-id").value = row.id;
+  document.getElementById("pingat-filter-kategori").value = row.kategori || "";
+  populatePingatSukanOptions(row.kategori || "");
   document.getElementById("pingat-sukan").value = row.sukan_id || "";
   document.getElementById("pingat-kategori").value = row.kategori || "";
   document.getElementById("pingat-pasukan").value = row.pasukan_id || "";
@@ -762,6 +886,8 @@ function editPingat(row) {
 function resetPingatForm() {
   document.getElementById("form-pingat").reset();
   document.getElementById("pingat-id").value = "";
+  document.getElementById("pingat-filter-kategori").value = "";
+  populatePingatSukanOptions("");
   document.getElementById("pingat-cancel").style.display = "none";
 }
 document.getElementById("pingat-cancel").addEventListener("click", resetPingatForm);

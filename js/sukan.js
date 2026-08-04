@@ -23,6 +23,13 @@ async function muatkanSenaraiAcara() {
   paparkanAcara(semuaAcara);
 }
 
+function formatJulatTarikh(a) {
+  if (a.tarikh_akhir && a.tarikh_akhir !== a.tarikh) {
+    return `${formatTarikh(a.tarikh)} &ndash; ${formatTarikh(a.tarikh_akhir)}`;
+  }
+  return `${formatTarikh(a.tarikh)}${a.masa ? " &middot; " + formatMasa(a.masa) : ""}`;
+}
+
 function paparkanAcara(senarai) {
   const el = document.getElementById("senarai-acara");
 
@@ -33,7 +40,7 @@ function paparkanAcara(senarai) {
 
   el.innerHTML = senarai.map((a) => `
     <div class="card event-card">
-      <span class="event-date">${formatTarikh(a.tarikh)}${a.masa ? " &middot; " + formatMasa(a.masa) : ""}</span>
+      <span class="event-date">${formatJulatTarikh(a)}</span>
       <span class="event-name">${escapeHtml(a.nama_acara)}</span>
       <div class="event-meta">
         ${a.kategori_sukan ? `<span>${escapeHtml(a.kategori_sukan)}</span>` : ""}

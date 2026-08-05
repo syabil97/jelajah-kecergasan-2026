@@ -3,7 +3,7 @@
    ================================================================ */
    const SUPABASE_URL = "https://tlxvkplyzhrqtulnjujp.supabase.co";
    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRseHZrcGx5emhycXR1bG5qdWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4Njc5ODcsImV4cCI6MjA5ODQ0Mzk4N30.pe5VDYqU134vXWFd9w8Ajtu-4TlxFiSj_Zr6oQ04IyI";
-   const GALERI_BUCKET = "galeri"; // nama Supabase Storage bucket
+   const GALERI_BUCKET = "galeri-karnival"; // nama Supabase Storage bucket
    
    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
    
@@ -99,6 +99,24 @@
      setTimeout(() => { el.textContent = ""; }, 3500);
    }
    const statusLabel = { akan_datang: "Akan Datang", sedang_berlangsung: "Sedang Berlangsung", selesai: "Selesai", ditangguhkan: "Ditangguhkan" };
+
+   // Kira status sebenar acara secara automatik ikut tarikh & masa semasa.
+   // "ditangguhkan" sentiasa manual — tak akan diganti oleh logik auto ni.
+   function kiraStatusAuto(row) {
+     if (row.status === "ditangguhkan") return "ditangguhkan";
+     if (!row.tarikh) return row.status || "akan_datang";
+
+     const now = new Date();
+     const mula = new Date(`${row.tarikh}T${row.masa || "00:00"}`);
+     const tarikhAkhir = row.tarikh_akhir || row.tarikh;
+     // Kalau takda masa tamat, anggap acara berlangsung sampai penghujung hari
+     // (23:59) tarikh akhir tu — bukan terus "selesai" sejurus lepas masa mula.
+     const akhir = new Date(`${tarikhAkhir}T${row.masa_tamat || "23:59"}`);
+
+     if (now < mula) return "akan_datang";
+     if (now > akhir) return "selesai";
+     return "sedang_berlangsung";
+   }
    
    async function loadAll() {
      await loadPasukan();
@@ -122,12 +140,15 @@
      const sukanKategoriSel = document.getElementById("sukan-kategori");
      const pingatFilterKategoriSel = document.getElementById("pingat-filter-kategori");
      const sukanFilterKategoriSel = document.getElementById("sukan-filter-kategori");
+     const galeriFilterKategoriSel = document.getElementById("galeri-filter-kategori");
      const curSukanKategori = sukanKategoriSel.value;
      const curPingatFilterKategori = pingatFilterKategoriSel.value;
      const curSukanFilterKategori = sukanFilterKategoriSel.value;
+     const curGaleriFilterKategori = galeriFilterKategoriSel.value;
      sukanKategoriSel.innerHTML = '<option value="">-- pilih kategori --</option>';
      pingatFilterKategoriSel.innerHTML = '<option value="">-- pilih kategori --</option>';
      sukanFilterKategoriSel.innerHTML = '<option value="">-- semua kategori --</option>';
+     galeriFilterKategoriSel.innerHTML = '<option value="">-- pilih kategori --</option>';
    
      if (error) { tbody.innerHTML = `<tr><td colspan="2" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
      if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="2" class="empty-note">Belum ada kategori. Sila tambah dahulu sebelum masuk data Sukan.</td></tr>`; return; }
@@ -142,11 +163,13 @@
        sukanKategoriSel.innerHTML += `<option value="${row.nama}">${row.nama}</option>`;
        pingatFilterKategoriSel.innerHTML += `<option value="${row.nama}">${row.nama}</option>`;
        sukanFilterKategoriSel.innerHTML += `<option value="${row.nama}">${row.nama}</option>`;
+       galeriFilterKategoriSel.innerHTML += `<option value="${row.nama}">${row.nama}</option>`;
      });
    
      if (curSukanKategori) sukanKategoriSel.value = curSukanKategori;
      if (curPingatFilterKategori) pingatFilterKategoriSel.value = curPingatFilterKategori;
      if (curSukanFilterKategori) sukanFilterKategoriSel.value = curSukanFilterKategori;
+     if (curGaleriFilterKategori) galeriFilterKategoriSel.value = curGaleriFilterKategori;
    }
    
    document.getElementById("form-kategori").addEventListener("submit", async (e) => {
@@ -262,12 +285,10 @@
    async function loadSukan() {
      const { data, error } = await sb.from("sukan").select("*").order("tarikh", { ascending: true });
      const kategoriSel = document.getElementById("keputusan-kategori");
-     const galeriSukanSel = document.getElementById("galeri-sukan");
      const pingatFilterKategoriSel = document.getElementById("pingat-filter-kategori");
+     const galeriFilterKategoriSel = document.getElementById("galeri-filter-kategori");
      const curKategori = kategoriSel.value;
-     const curGaleriSukan = galeriSukanSel.value;
      kategoriSel.innerHTML = '<option value="">-- pilih --</option>';
-     galeriSukanSel.innerHTML = '<option value="">-- tiada --</option>';
    
      if (error) {
        document.querySelector("#sukan-table tbody").innerHTML = `<tr><td colspan="6" class="empty-note">Ralat: ${error.message}</td></tr>`;
@@ -282,13 +303,12 @@
          kategoriSeen.add(row.kategori_sukan);
          kategoriSel.innerHTML += `<option value="${row.kategori_sukan}">${row.kategori_sukan}</option>`;
        }
-       galeriSukanSel.innerHTML += `<option value="${row.id}">${row.nama_acara}</option>`;
      });
    
      if (curKategori) kategoriSel.value = curKategori;
-     if (curGaleriSukan) galeriSukanSel.value = curGaleriSukan;
    
      populatePingatSukanOptions(pingatFilterKategoriSel.value);
+     populateGaleriSukanOptions(galeriFilterKategoriSel.value);
      sukanCurrentPage = 1;
      renderSukanTable();
    }
@@ -325,7 +345,7 @@
          <td>${row.kategori_sukan || ""}</td>
          <td>${row.tarikh || ""}</td>
          <td>${row.tarikh_akhir || ""}</td>
-         <td>${statusLabel[row.status] || row.status || ""}</td>
+         <td>${statusLabel[kiraStatusAuto(row)] || ""}</td>
          <td class="row-actions">
            <button class="edit" onclick='editSukan(${JSON.stringify(row)})'>Edit</button>
            <button class="del" onclick="deleteSukan('${row.id}')">Padam</button>
@@ -403,6 +423,32 @@
      const opt = e.target.selectedOptions[0];
      document.getElementById("pingat-kategori").value = opt ? (opt.dataset.kategori || "") : "";
    });
+
+   // Isi dropdown "Acara Sukan" ikut kategori yang dipilih dalam tab Galeri
+   function populateGaleriSukanOptions(kategori) {
+     const sel = document.getElementById("galeri-sukan");
+     const current = sel.value;
+
+     if (!kategori) {
+       sel.innerHTML = '<option value="">-- pilih kategori dahulu --</option>';
+       sel.disabled = true;
+       return;
+     }
+
+     sel.disabled = false;
+     sel.innerHTML = '<option value="">-- tiada --</option>' +
+       semuaSukanCache
+         .filter(r => r.kategori_sukan === kategori)
+         .map(r => `<option value="${r.id}">${r.nama_acara}</option>`)
+         .join("");
+
+     if (current) sel.value = current;
+   }
+
+   // bila pilih kategori dalam tab Galeri, filter senarai acara
+   document.getElementById("galeri-filter-kategori").addEventListener("change", (e) => {
+     populateGaleriSukanOptions(e.target.value);
+   });
    
    document.getElementById("form-sukan").addEventListener("submit", async (e) => {
      e.preventDefault();
@@ -412,14 +458,22 @@
      if (tarikhMula && tarikhAkhir && tarikhAkhir < tarikhMula) {
        return setMsg("sukan-status-msg", "Ralat: Tarikh Akhir tak boleh sebelum Tarikh Mula.", false);
      }
+     const masaMula = document.getElementById("sukan-masa").value;
+     const masaTamat = document.getElementById("sukan-masa-tamat").value;
+     if (masaMula && masaTamat && (!tarikhAkhir || tarikhAkhir === tarikhMula) && masaTamat < masaMula) {
+       return setMsg("sukan-status-msg", "Ralat: Masa Tamat tak boleh sebelum Masa Mula.", false);
+     }
      const payload = {
        nama_acara: document.getElementById("sukan-nama-acara").value.trim(),
        kategori_sukan: document.getElementById("sukan-kategori").value.trim(),
        tarikh: document.getElementById("sukan-tarikh").value || null,
        tarikh_akhir: document.getElementById("sukan-tarikh-akhir").value || null,
        masa: document.getElementById("sukan-masa").value || null,
+       masa_tamat: document.getElementById("sukan-masa-tamat").value || null,
        lokasi: document.getElementById("sukan-lokasi").value.trim() || null,
-       status: document.getElementById("sukan-status").value,
+       // Status "sebenar" (akan_datang/sedang_berlangsung/selesai) dikira automatik
+       // masa papar (lihat kiraStatusAuto). Kolum ini cuma simpan togol manual "ditangguhkan".
+       status: document.getElementById("sukan-ditangguhkan").checked ? "ditangguhkan" : "akan_datang",
        keputusan: document.getElementById("sukan-keputusan").value.trim() || null,
      };
      const { error } = id
@@ -438,14 +492,16 @@
      document.getElementById("sukan-tarikh").value = row.tarikh || "";
      document.getElementById("sukan-tarikh-akhir").value = row.tarikh_akhir || "";
      document.getElementById("sukan-masa").value = row.masa || "";
+     document.getElementById("sukan-masa-tamat").value = row.masa_tamat || "";
      document.getElementById("sukan-lokasi").value = row.lokasi || "";
-     document.getElementById("sukan-status").value = row.status || "akan_datang";
+     document.getElementById("sukan-ditangguhkan").checked = row.status === "ditangguhkan";
      document.getElementById("sukan-keputusan").value = row.keputusan || "";
      document.getElementById("sukan-cancel").style.display = "inline-block";
    }
    function resetSukanForm() {
      document.getElementById("form-sukan").reset();
      document.getElementById("sukan-id").value = "";
+     document.getElementById("sukan-ditangguhkan").checked = false;
      document.getElementById("sukan-cancel").style.display = "none";
    }
    document.getElementById("sukan-cancel").addEventListener("click", resetSukanForm);
@@ -668,22 +724,160 @@
    }
    
    /* ================= GALERI ================= */
+   let semuaGaleriCache = [];
+   let galeriAdminFilterKategori = "";
+   let galeriAdminFilterSukan = "";
+   let galeriAdminSearchTerm = "";
+
    async function loadGaleri() {
-     const { data, error } = await sb.from("galeri").select("*").order("dimuat_naik_pada", { ascending: false });
+     const { data, error } = await sb
+       .from("galeri")
+       .select("*, sukan(nama_acara, kategori_sukan)")
+       .order("dimuat_naik_pada", { ascending: false });
      const wrap = document.getElementById("galeri-preview");
-     wrap.innerHTML = "";
+     const filterKategoriSel = document.getElementById("galeri-admin-filter-kategori");
+     const curFilterKategori = filterKategoriSel.value;
+
      if (error) { wrap.innerHTML = `<div class="empty-note">Ralat: ${error.message}</div>`; return; }
-     if (!data || data.length === 0) { wrap.innerHTML = `<div class="empty-note">Belum ada gambar.</div>`; return; }
-     data.forEach(row => {
-       const { data: urlData } = sb.storage.from(GALERI_BUCKET).getPublicUrl(row.image_path);
-       wrap.innerHTML += `<div class="item">
-         <img src="${urlData.publicUrl}" alt="${row.tajuk || ''}">
-         <div class="caption">${row.tajuk || ""}
-           <button onclick="deleteGaleri('${row.id}','${row.image_path}')">Padam</button>
-         </div></div>`;
-     });
+
+     semuaGaleriCache = data || [];
+
+     // Isi dropdown "Tapis Kategori" guna kategori sedia ada (semuaKategoriCache dari loadKategori)
+     filterKategoriSel.innerHTML = '<option value="">-- semua kategori --</option>' +
+       semuaKategoriCache.map(k => `<option value="${k.nama}">${k.nama}</option>`).join("");
+     if (curFilterKategori) filterKategoriSel.value = curFilterKategori;
+
+     populateGaleriAdminFilterSukan(filterKategoriSel.value);
+     renderGaleriPreview();
    }
-   
+
+   function populateGaleriAdminFilterSukan(kategori) {
+     const sel = document.getElementById("galeri-admin-filter-sukan");
+     const current = sel.value;
+
+     if (!kategori) {
+       sel.innerHTML = '<option value="">-- semua acara --</option>';
+       sel.disabled = true;
+       galeriAdminFilterSukan = "";
+       return;
+     }
+
+     sel.disabled = false;
+     sel.innerHTML = '<option value="">-- semua acara --</option>' +
+       semuaSukanCache
+         .filter(r => r.kategori_sukan === kategori)
+         .map(r => `<option value="${r.id}">${r.nama_acara}</option>`)
+         .join("");
+
+     if (current) sel.value = current;
+   }
+
+   document.getElementById("galeri-admin-filter-kategori").addEventListener("change", (e) => {
+     galeriAdminFilterKategori = e.target.value;
+     populateGaleriAdminFilterSukan(galeriAdminFilterKategori);
+     galeriAdminFilterSukan = "";
+     renderGaleriPreview();
+   });
+   document.getElementById("galeri-admin-filter-sukan").addEventListener("change", (e) => {
+     galeriAdminFilterSukan = e.target.value;
+     renderGaleriPreview();
+   });
+   document.getElementById("galeri-admin-search").addEventListener("input", (e) => {
+     galeriAdminSearchTerm = e.target.value.trim().toLowerCase();
+     renderGaleriPreview();
+   });
+   document.getElementById("galeri-admin-filter-reset").addEventListener("click", () => {
+     document.getElementById("galeri-admin-filter-kategori").value = "";
+     document.getElementById("galeri-admin-search").value = "";
+     galeriAdminFilterKategori = "";
+     galeriAdminFilterSukan = "";
+     galeriAdminSearchTerm = "";
+     populateGaleriAdminFilterSukan("");
+     renderGaleriPreview();
+   });
+
+   function renderGaleriPreview() {
+     const wrap = document.getElementById("galeri-preview");
+
+     const tersaring = semuaGaleriCache.filter(row => {
+       const kenaKategori = !galeriAdminFilterKategori || row.sukan?.kategori_sukan === galeriAdminFilterKategori;
+       const kenaSukan = !galeriAdminFilterSukan || row.sukan_id === galeriAdminFilterSukan;
+       const kenaCari = !galeriAdminSearchTerm || (row.tajuk || "").toLowerCase().includes(galeriAdminSearchTerm);
+       return kenaKategori && kenaSukan && kenaCari;
+     });
+
+     if (tersaring.length === 0) {
+       wrap.innerHTML = `<div class="empty-note">Tiada gambar sepadan.</div>`;
+       return;
+     }
+
+     // Kumpul ikut nama acara supaya senang urus (gambar tanpa acara masuk "Lain-lain")
+     const kumpulan = new Map();
+     tersaring.forEach(row => {
+       const nama = row.sukan?.nama_acara || "Lain-lain";
+       if (!kumpulan.has(nama)) kumpulan.set(nama, []);
+       kumpulan.get(nama).push(row);
+     });
+     const namaList = [...kumpulan.keys()].sort((a, b) => {
+       if (a === "Lain-lain") return 1;
+       if (b === "Lain-lain") return -1;
+       return a.localeCompare(b);
+     });
+
+     wrap.innerHTML = namaList.map(nama => `
+       <div class="gallery-group-admin">
+         <div class="gallery-group-admin-title">${nama} <span class="gallery-group-count">(${kumpulan.get(nama).length})</span></div>
+         <div class="gallery-preview-inner">
+           ${kumpulan.get(nama).map(kadGaleriAdmin).join("")}
+         </div>
+       </div>
+     `).join("");
+   }
+
+   function kadGaleriAdmin(row) {
+     const { data: urlData } = sb.storage.from(GALERI_BUCKET).getPublicUrl(row.image_path);
+     return `<div class="item" id="galeri-item-${row.id}">
+       <img src="${urlData.publicUrl}" alt="${row.tajuk || ''}">
+       <div class="caption">
+         <span class="caption-text">${row.tajuk || '<em>(tiada tajuk)</em>'}</span>
+         <input type="text" class="edit-input" value="${(row.tajuk || '').replace(/"/g, '&quot;')}" style="display:none;">
+         <div class="caption-actions">
+           <button class="edit-btn" onclick="mulaEditGaleri('${row.id}')">Edit</button>
+           <button class="save-btn" onclick="simpanEditGaleri('${row.id}')" style="display:none;">Simpan</button>
+           <button class="cancel-btn" onclick="batalEditGaleri('${row.id}')" style="display:none;">Batal</button>
+           <button onclick="deleteGaleri('${row.id}','${row.image_path}')">Padam</button>
+         </div>
+       </div>
+     </div>`;
+   }
+
+   function mulaEditGaleri(id) {
+     const item = document.getElementById(`galeri-item-${id}`);
+     item.querySelector(".caption-text").style.display = "none";
+     item.querySelector(".edit-input").style.display = "block";
+     item.querySelector(".edit-btn").style.display = "none";
+     item.querySelector(".save-btn").style.display = "inline-block";
+     item.querySelector(".cancel-btn").style.display = "inline-block";
+     item.querySelector(".edit-input").focus();
+   }
+
+   function batalEditGaleri(id) {
+     const item = document.getElementById(`galeri-item-${id}`);
+     item.querySelector(".caption-text").style.display = "inline";
+     item.querySelector(".edit-input").style.display = "none";
+     item.querySelector(".edit-btn").style.display = "inline-block";
+     item.querySelector(".save-btn").style.display = "none";
+     item.querySelector(".cancel-btn").style.display = "none";
+   }
+
+   async function simpanEditGaleri(id) {
+     const item = document.getElementById(`galeri-item-${id}`);
+     const tajukBaru = item.querySelector(".edit-input").value.trim();
+     const { error } = await sb.from("galeri").update({ tajuk: tajukBaru || null }).eq("id", id);
+     if (error) { alert("Ralat: " + error.message); return; }
+     loadGaleri();
+   }
+
    document.getElementById("form-galeri").addEventListener("submit", async (e) => {
      e.preventDefault();
      const fileInput = document.getElementById("galeri-file");
@@ -706,6 +900,7 @@
      if (error) return setMsg("galeri-status-msg", "Ralat: " + error.message, false);
      setMsg("galeri-status-msg", "Gambar berjaya dimuat naik.");
      document.getElementById("form-galeri").reset();
+     populateGaleriSukanOptions("");
      loadGaleri();
    });
    

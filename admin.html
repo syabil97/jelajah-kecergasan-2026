@@ -66,7 +66,7 @@
     <!-- ---------------- SUKAN ---------------- -->
     <div class="panel active" id="panel-sukan">
       <h2>Jadual Sukan</h2>
-      <p class="hint">Tambah acara satu-satu ikut apa yang confirm. "Kategori Sukan" akan jadi pilihan dalam tab Keputusan; "Nama Acara" akan jadi pilihan dalam tab Pingat.</p>
+      <p class="hint">Tambah acara satu-satu ikut apa yang confirm. "Kategori Sukan" akan jadi pilihan dalam tab Keputusan; "Nama Acara" akan jadi pilihan dalam tab Pingat. Status (Akan Datang / Sedang Berlangsung / Selesai) dikira automatik ikut tarikh &amp; masa — tak perlu set manual. Guna checkbox "Ditangguhkan" je kalau acara tu ditangguhkan.</p>
       <form class="entry-form" id="form-sukan">
         <input type="hidden" id="sukan-id">
         <div class="field">
@@ -88,21 +88,20 @@
           <input type="date" id="sukan-tarikh-akhir">
         </div>
         <div class="field">
-          <label>Masa</label>
+          <label>Masa Mula</label>
           <input type="time" id="sukan-masa">
+        </div>
+        <div class="field">
+          <label>Masa Tamat (opsyenal)</label>
+          <input type="time" id="sukan-masa-tamat">
         </div>
         <div class="field">
           <label>Lokasi</label>
           <input type="text" id="sukan-lokasi" placeholder="cth: Dewan Sukan Utama">
         </div>
-        <div class="field">
-          <label>Status</label>
-          <select id="sukan-status">
-            <option value="akan_datang">Akan Datang</option>
-            <option value="sedang_berlangsung">Sedang Berlangsung</option>
-            <option value="selesai">Selesai</option>
-            <option value="ditangguhkan">Ditangguhkan</option>
-          </select>
+        <div class="field checkbox">
+          <input type="checkbox" id="sukan-ditangguhkan">
+          <label>Tandakan sebagai DITANGGUHKAN (manual)</label>
         </div>
         <div class="field full">
           <label>Keputusan (ringkasan teks, opsyenal)</label>
@@ -316,9 +315,15 @@
           <input type="text" id="galeri-tajuk" placeholder="cth: Perlawanan Triples - Hari 2">
         </div>
         <div class="field">
+          <label>Kategori Sukan</label>
+          <select id="galeri-filter-kategori">
+            <option value="">-- pilih kategori --</option>
+          </select>
+        </div>
+        <div class="field">
           <label>Acara Sukan (opsyenal)</label>
-          <select id="galeri-sukan">
-            <option value="">-- tiada --</option>
+          <select id="galeri-sukan" disabled>
+            <option value="">-- pilih kategori dahulu --</option>
           </select>
         </div>
         <div class="field full">
@@ -330,6 +335,27 @@
           <span class="status-msg" id="galeri-status-msg"></span>
         </div>
       </form>
+      <div class="entry-form" style="align-items:flex-end;">
+        <div class="field">
+          <label>Tapis Kategori</label>
+          <select id="galeri-admin-filter-kategori">
+            <option value="">-- semua kategori --</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tapis Acara</label>
+          <select id="galeri-admin-filter-sukan" disabled>
+            <option value="">-- semua acara --</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Cari Tajuk</label>
+          <input type="text" id="galeri-admin-search" placeholder="cth: Hari 2">
+        </div>
+        <div class="form-actions" style="margin:0;">
+          <button type="button" class="btn-cancel" id="galeri-admin-filter-reset">Reset</button>
+        </div>
+      </div>
       <div class="gallery-preview" id="galeri-preview"></div>
     </div>
 

@@ -27,7 +27,26 @@ function formatJulatTarikh(a) {
   if (a.tarikh_akhir && a.tarikh_akhir !== a.tarikh) {
     return `${formatTarikh(a.tarikh)} &ndash; ${formatTarikh(a.tarikh_akhir)}`;
   }
-  return `${formatTarikh(a.tarikh)}${a.masa ? " &middot; " + formatMasa(a.masa) : ""}`;
+  const masaTeks = a.masa
+    ? " &middot; " + formatMasa(a.masa) + (a.masa_tamat ? " &ndash; " + formatMasa(a.masa_tamat) : "")
+    : "";
+  return `${formatTarikh(a.tarikh)}${masaTeks}`;
+}
+
+// Kira status sebenar acara secara automatik ikut tarikh & masa semasa.
+// "ditangguhkan" sentiasa manual — tak akan diganti oleh logik auto ni.
+function kiraStatusAuto(a) {
+  if (a.status === "ditangguhkan") return "ditangguhkan";
+  if (!a.tarikh) return a.status || "akan_datang";
+
+  const now = new Date();
+  const mula = new Date(`${a.tarikh}T${a.masa || "00:00"}`);
+  const tarikhAkhir = a.tarikh_akhir || a.tarikh;
+  const akhir = new Date(`${tarikhAkhir}T${a.masa_tamat || a.masa || "23:59"}`);
+
+  if (now < mula) return "akan_datang";
+  if (now > akhir) return "selesai";
+  return "sedang_berlangsung";
 }
 
 function paparkanAcara(senarai) {
@@ -47,7 +66,7 @@ function paparkanAcara(senarai) {
         ${a.lokasi ? `<span>&middot; ${escapeHtml(a.lokasi)}</span>` : ""}
       </div>
       ${a.keputusan ? `<p style="font-size:13px;color:var(--ink-600);margin:2px 0 0">${escapeHtml(a.keputusan)}</p>` : ""}
-      <span class="badge badge-${a.status}">${statusLabel(a.status)}</span>
+      <span class="badge badge-${kiraStatusAuto(a)}">${statusLabel(kiraStatusAuto(a))}</span>
     </div>
   `).join("");
 }
@@ -57,7 +76,7 @@ document.getElementById("tapis-status").addEventListener("change", (e) => {
   if (!nilai) {
     paparkanAcara(semuaAcara);
   } else {
-    paparkanAcara(semuaAcara.filter((a) => a.status === nilai));
+    paparkanAcara(semuaAcara.filter((a) => kiraStatusAuto(a) === nilai));
   }
 });
 

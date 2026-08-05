@@ -1,32 +1,182 @@
 // ============================================================
 // LOGIK HALAMAN GALERI (galeri.html)
+// Tab ikut KATEGORI SUKAN. Dalam setiap tab, gambar dikumpulkan
+// ikut NAMA ACARA (heading), gambar tanpa acara masuk "Lain-lain".
 // ============================================================
 
+let semuaGaleri = [];
+let kategoriAktif = "semua";
+let senaraiUntukLightbox = [];
+let indeksLightboxSemasa = 0;
+
 async function muatkanGaleri() {
-  const el = document.getElementById("galeri-grid");
+  const elTabs = document.getElementById("subtab-bar");
+  const elGrid = document.getElementById("galeri-grid");
 
   const { data, error } = await supabaseClient
     .from("galeri")
-    .select("*")
+    .select("*, sukan(nama_acara, kategori_sukan)")
     .order("dimuat_naik_pada", { ascending: false });
 
   if (error) {
-    el.innerHTML = `<div class="empty-state">Gagal memuatkan galeri.</div>`;
+    elTabs.innerHTML = "";
+    elGrid.innerHTML = `<div class="empty-state">Gagal memuatkan galeri.</div>`;
     console.error(error);
     return;
   }
 
-  if (!data || data.length === 0) {
-    el.innerHTML = `<div class="empty-state">Belum ada gambar dimuat naik.</div>`;
+  semuaGaleri = data || [];
+
+  if (semuaGaleri.length === 0) {
+    elTabs.innerHTML = "";
+    elGrid.innerHTML = `<div class="empty-state">Belum ada gambar dimuat naik.</div>`;
     return;
   }
 
-  el.innerHTML = data.map((g) => `
-    <div class="gallery-item">
-      <img src="${getGaleriUrl(g.image_path)}" alt="${escapeHtml(g.tajuk || "Gambar karnival")}" loading="lazy">
-      ${g.tajuk ? `<div class="cap">${escapeHtml(g.tajuk)}</div>` : ""}
-    </div>
-  `).join("");
+  // Senarai kategori unik yang ada gambar, susun ikut abjad
+  const kategoriSeen = new Set();
+  semuaGaleri.forEach((g) => {
+    if (g.sukan?.kategori_sukan) kategoriSeen.add(g.sukan.kategori_sukan);
+  });
+  const senaraiKategori = [...kategoriSeen].sort();
+
+  const adaTanpaKategori = semuaGaleri.some((g) => !g.sukan?.kategori_sukan);
+
+  const tabButtons = [`<button class="subtab-btn ${kategoriAktif === "semua" ? "active" : ""}" data-kategori="semua">Semua</button>`]
+    .concat(senaraiKategori.map((k) => `
+      <button class="subtab-btn ${kategoriAktif === k ? "active" : ""}" data-kategori="${escapeHtml(k)}">${escapeHtml(k)}</button>
+    `));
+
+  if (adaTanpaKategori) {
+    tabButtons.push(`<button class="subtab-btn ${kategoriAktif === "lain" ? "active" : ""}" data-kategori="lain">Lain-lain</button>`);
+  }
+
+  // Kalau cuma satu kumpulan je (takda kategori langsung), tak payah papar tab
+  elTabs.innerHTML = senaraiKategori.length === 0 ? "" : tabButtons.join("");
+
+  elTabs.querySelectorAll(".subtab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      kategoriAktif = btn.dataset.kategori;
+      elTabs.querySelectorAll(".subtab-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      paparkanGaleri();
+    });
+  });
+
+  paparkanGaleri();
 }
+
+function getGaleriTersaring() {
+  if (kategoriAktif === "semua") return semuaGaleri;
+  if (kategoriAktif === "lain") return semuaGaleri.filter((g) => !g.sukan?.kategori_sukan);
+  return semuaGaleri.filter((g) => g.sukan?.kategori_sukan === kategoriAktif);
+}
+
+function paparkanGaleri() {
+  const elGrid = document.getElementById("galeri-grid");
+  const tersaring = getGaleriTersaring();
+
+  if (tersaring.length === 0) {
+    elGrid.innerHTML = `<div class="empty-state">Tiada gambar untuk kumpulan ini.</div>`;
+    senaraiUntukLightbox = [];
+    return;
+  }
+
+  // Kumpulkan ikut nama acara (gambar tanpa acara masuk "Lain-lain")
+  const kumpulan = new Map(); // nama acara -> senarai gambar
+  tersaring.forEach((g) => {
+    const nama = g.sukan?.nama_acara || "Lain-lain";
+    if (!kumpulan.has(nama)) kumpulan.set(nama, []);
+    kumpulan.get(nama).push(g);
+  });
+
+  // "Lain-lain" letak last, selebihnya ikut abjad
+  const namaAcaraList = [...kumpulan.keys()].sort((a, b) => {
+    if (a === "Lain-lain") return 1;
+    if (b === "Lain-lain") return -1;
+    return a.localeCompare(b);
+  });
+
+  senaraiUntukLightbox = tersaring;
+  let offset = 0;
+
+  elGrid.innerHTML = namaAcaraList.map((nama) => {
+    const gambarAcara = kumpulan.get(nama);
+    const mulaOffset = offset;
+    offset += gambarAcara.length;
+
+    return `
+      <div class="gallery-group">
+        <span class="gallery-group-title">${escapeHtml(nama)}</span>
+        <div class="gallery-grid-inner">
+          ${gambarAcara.map((g, i) => `
+            <div class="gallery-item" data-index="${mulaOffset + i}" role="button" tabindex="0" aria-label="Besarkan gambar">
+              <img src="${getGaleriUrl(g.image_path)}" alt="${escapeHtml(g.tajuk || "Gambar karnival")}" loading="lazy">
+              <div class="cap">${escapeHtml(g.tajuk || "Gambar Karnival")}</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  elGrid.querySelectorAll(".gallery-item").forEach((item) => {
+    const buka = () => bukaLightbox(parseInt(item.dataset.index, 10));
+    item.addEventListener("click", buka);
+    item.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); buka(); }
+    });
+  });
+}
+
+/* ---------------- LIGHTBOX ---------------- */
+const lightboxEl = document.getElementById("lightbox");
+const lightboxImgEl = document.getElementById("lightbox-img");
+const lightboxCapEl = document.getElementById("lightbox-cap");
+
+function bukaLightbox(index) {
+  indeksLightboxSemasa = index;
+  paparkanLightbox();
+  lightboxEl.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function tutupLightbox() {
+  lightboxEl.classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function paparkanLightbox() {
+  const g = senaraiUntukLightbox[indeksLightboxSemasa];
+  if (!g) return;
+  lightboxImgEl.src = getGaleriUrl(g.image_path);
+  lightboxImgEl.alt = g.tajuk || "Gambar karnival";
+  lightboxCapEl.textContent = g.tajuk || "";
+}
+
+function lightboxSeterusnya() {
+  indeksLightboxSemasa = (indeksLightboxSemasa + 1) % senaraiUntukLightbox.length;
+  paparkanLightbox();
+}
+
+function lightboxSebelum() {
+  indeksLightboxSemasa = (indeksLightboxSemasa - 1 + senaraiUntukLightbox.length) % senaraiUntukLightbox.length;
+  paparkanLightbox();
+}
+
+document.getElementById("lightbox-close").addEventListener("click", tutupLightbox);
+document.getElementById("lightbox-next").addEventListener("click", lightboxSeterusnya);
+document.getElementById("lightbox-prev").addEventListener("click", lightboxSebelum);
+
+lightboxEl.addEventListener("click", (e) => {
+  if (e.target === lightboxEl) tutupLightbox();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (!lightboxEl.classList.contains("open")) return;
+  if (e.key === "Escape") tutupLightbox();
+  if (e.key === "ArrowRight") lightboxSeterusnya();
+  if (e.key === "ArrowLeft") lightboxSebelum();
+});
 
 muatkanGaleri();

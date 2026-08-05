@@ -33,8 +33,13 @@ async function muatkanMiniScoreboard() {
       <span class="sb-total">${row.jumlah}</span>
     </div>
   `).join("");
+}
 
-  document.getElementById("stat-pasukan").textContent = data.length;
+function formatJulatTarikh(a) {
+  if (a.tarikh_akhir && a.tarikh_akhir !== a.tarikh) {
+    return `${formatTarikh(a.tarikh)} &ndash; ${formatTarikh(a.tarikh_akhir)}`;
+  }
+  return `${formatTarikh(a.tarikh)}${a.masa ? " &middot; " + formatMasa(a.masa) : ""}`;
 }
 
 async function muatkanAcaraTerkini() {
@@ -44,7 +49,7 @@ async function muatkanAcaraTerkini() {
   const { data, error } = await supabaseClient
     .from("sukan")
     .select("*")
-    .gte("tarikh", hariIni)
+    .or(`tarikh.gte.${hariIni},tarikh_akhir.gte.${hariIni}`)
     .order("tarikh", { ascending: true })
     .order("masa", { ascending: true })
     .limit(6);
@@ -62,7 +67,7 @@ async function muatkanAcaraTerkini() {
 
   el.innerHTML = data.map((a) => `
     <div class="card event-card">
-      <span class="event-date">${formatTarikh(a.tarikh)}${a.masa ? " &middot; " + formatMasa(a.masa) : ""}</span>
+      <span class="event-date">${formatJulatTarikh(a)}</span>
       <span class="event-name">${escapeHtml(a.nama_acara)}</span>
       <div class="event-meta">
         ${a.kategori_sukan ? `<span>${escapeHtml(a.kategori_sukan)}</span>` : ""}
@@ -71,8 +76,6 @@ async function muatkanAcaraTerkini() {
       <span class="badge badge-${a.status}">${statusLabel(a.status)}</span>
     </div>
   `).join("");
-
-  document.getElementById("stat-acara").textContent = data.length;
 }
 
 async function muatkanInfoTerkini() {
@@ -104,10 +107,29 @@ async function muatkanInfoTerkini() {
   `).join("");
 }
 
+async function muatkanStatistikRingkasan() {
+  const [acaraRes, pasukanRes] = await Promise.all([
+    supabaseClient.from("sukan").select("*", { count: "exact", head: true }),
+    supabaseClient.from("pasukan").select("*", { count: "exact", head: true }),
+  ]);
+
+  if (acaraRes.error) {
+    console.error(acaraRes.error);
+  } else {
+    document.getElementById("stat-acara").textContent = acaraRes.count ?? "—";
+  }
+
+  if (pasukanRes.error) {
+    console.error(pasukanRes.error);
+  } else {
+    document.getElementById("stat-pasukan").textContent = pasukanRes.count ?? "—";
+  }
+}
+
 function kiraHariKarnival() {
   // Tarikh karnival — laraskan mengikut tarikh sebenar
-  const mula = new Date("2026-08-14T00:00:00");
-  const tamat = new Date("2026-08-20T23:59:59");
+  const mula = new Date("2026-08-17T00:00:00");
+  const tamat = new Date("2026-08-22T23:59:59");
   const hariIni = new Date();
   let label = "—";
 
@@ -124,6 +146,7 @@ function kiraHariKarnival() {
 }
 
 kiraHariKarnival();
+muatkanStatistikRingkasan();
 muatkanMiniScoreboard();
 muatkanAcaraTerkini();
 muatkanInfoTerkini();

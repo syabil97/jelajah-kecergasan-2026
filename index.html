@@ -5,59 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jelajah Kecergasan 2026 Peringkat Kebangsaan</title>
 <link rel="stylesheet" href="css/style.css">
-<style>
-  /* Pautan log masuk admin — pin betul-betul di hujung kiri sekali, tak terikat dengan susunan nav */
-  .admin-login{
-    position:fixed;
-    right:24px;
-    top:14px;
-    z-index:1000;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:30px;
-    height:30px;
-    border-radius:50%;
-    background:rgba(255,255,255,.9);
-    box-shadow:0 1px 4px rgba(0,0,0,.15);
-    text-decoration:none;
-    font-size:14px;
-    opacity:.6;
-    transition:opacity .15s ease;
-  }
-  .admin-login:hover{ opacity:1; }
-
-  /* Skrin phone: sembunyikan terus ikon admin — hanya nampak di desktop/monitor */
-  @media (max-width: 768px){
-    .admin-login{
-      display:none;
-    }
-  }
-</style>
 </head>
 <body>
 
-<a href="admin.html" class="admin-login" title="Log Masuk Admin">&#128274;</a>
-
-<header class="site-header">
-  <nav class="nav">
-    <a href="index.html" class="brand">
-      <span>
-        <span class="eyebrow">Jabatan Kesihatan Negeri, Negeri Sembilan</span>
-        <span class="title">Jelajah Kecergasan 2026 Peringkat Kebangsaan</span>
-      </span>
-    </a>
-    <button class="nav-toggle" aria-label="Buka menu">&#9776;</button>
-    <ul class="nav-links">
-      <li><a href="index.html">Utama</a></li>
-      <li><a href="sukan.html">Jadual Sukan</a></li>
-      <li><a href="keputusan.html">Keputusan</a></li>
-      <li><a href="pingat.html">Pungutan Pingat</a></li>
-      <li><a href="galeri.html">Galeri</a></li>
-      <li><a href="info.html">Info</a></li>
-    </ul>
-  </nav>
-</header>
+<div id="header-placeholder"></div>
 
 <section class="hero">
   <div class="container hero-inner">
@@ -75,7 +26,7 @@
     </div>
 
     <div class="scoreboard-mini">
-      <div class="sb-title">Pungutan Pingat Teratas</div>
+      <div class="sb-title">Top 5 Kedudukan Semasa</div>
       <div class="sb-head">
         <span>#</span><span>Pasukan</span><span>E</span><span>P</span><span>G</span><span>J</span>
       </div>
@@ -116,14 +67,10 @@
   </div>
 </section>
 
-<footer class="site-footer">
-  <div class="container">
-    <strong>Jelajah Kecergasan 2026 Peringkat Kebangsaan</strong><br>
-    Jabatan Kesihatan Negeri, Negeri Sembilan
-  </div>
-</footer>
+<div id="footer-placeholder"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/include.js"></script>
 <script src="js/config.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/index.js"></script>

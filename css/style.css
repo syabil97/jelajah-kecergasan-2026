@@ -47,6 +47,9 @@
    }
    
    img { max-width: 100%; display: block; }
+
+   /* Footer sentiasa lekat di bawah viewport walaupun content page pendek */
+   #footer-placeholder { margin-top: auto; }
    
    a { color: inherit; text-decoration: none; }
    
@@ -64,6 +67,31 @@
      padding: 0 24px;
    }
    
+   /* ---------------- ADMIN LOGIN ---------------- */
+   .admin-login {
+     position: fixed;
+     right: 24px;
+     top: 14px;
+     z-index: 1000;
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     width: 30px;
+     height: 30px;
+     border-radius: 50%;
+     background: rgba(255,255,255,.9);
+     box-shadow: 0 1px 4px rgba(0,0,0,.15);
+     text-decoration: none;
+     font-size: 14px;
+     opacity: .6;
+     transition: opacity .15s ease;
+   }
+   .admin-login:hover { opacity: 1; }
+
+   @media (max-width: 768px) {
+     .admin-login { display: none; }
+   }
+
    /* ---------------- NAV ---------------- */
    .site-header {
      position: sticky;
@@ -89,6 +117,12 @@
      color: var(--cream-50);
      min-width: 0;
      flex-shrink: 1;
+   }
+   
+   .brand-logo {
+     height: 42px;
+     width: auto;
+     flex-shrink: 0;
    }
    
    .brand .eyebrow {
@@ -723,6 +757,13 @@
    }
    
    .site-footer strong { color: var(--cream-50); }
+
+   .footer-logo {
+     display: block;
+     margin: 0 auto 16px;
+     height: 90px;
+     width: auto;
+   }
    
    /* ---------------- EMPTY / LOADING STATES ---------------- */
    .empty-state {

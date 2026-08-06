@@ -1,0 +1,59 @@
+CARA APPLY KE SEMUA PAGE LAIN (sukan.html, keputusan.html, pingat.html, galeri.html, info.html, admin.html)
+================================================================================
+
+1) Dalam <head>, pastikan ada:
+   <link rel="stylesheet" href="css/style.css">
+   (buang mana-mana <style> inline untuk .admin-login sebab dah pindah ke style.css)
+
+2) Selepas <body>, letak:
+   <div id="header-placeholder"></div>
+
+3) Sebelum </body>, ganti blok <footer>...</footer> sedia ada dengan:
+   <div id="footer-placeholder"></div>
+
+4) Pastikan urutan <script> macam ni (include.js MESTI sebelum script page-specific
+   yang sentuh nav-toggle, tapi selepas supabase kalau perlu):
+
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+   <script src="js/include.js"></script>
+   <script src="js/config.js"></script>
+   <script src="js/utils.js"></script>
+   <script src="js/sukan.js"></script>   <-- tukar ikut page
+
+5) Buang terus markup <header>...</header> dan <a class="admin-login">...</a>
+   yang lama dari page tu — sebab include.js akan inject automatik dari
+   partials/header.html.
+
+6) Kalau script page tu (contoh sukan.js) perlukan elemen dalam header/footer
+   yang baru di-load (jarang berlaku), bungkus dalam:
+
+   document.addEventListener("partialsLoaded", () => {
+     // kod yang perlu header/footer dah siap load
+   });
+
+STRUKTUR FOLDER AKHIR
+================================================================================
+/
+├── index.html
+├── sukan.html, keputusan.html, ... (lain-lain page)
+├── partials/
+│   ├── header.html   <-- edit SINI je untuk ubah header semua page
+│   └── footer.html   <-- edit SINI je untuk ubah footer semua page
+├── css/
+│   └── style.css
+├── js/
+│   ├── include.js    <-- baru, jangan sentuh melainkan nak ubah logik loading
+│   ├── config.js
+│   ├── utils.js
+│   └── index.js / sukan.js / dll.
+└── img/
+    └── jata.png
+
+NOTA PENTING
+================================================================================
+- fetch() dalam include.js perlukan HTTP server (bukan buka fail terus guna
+  file:// dari desktop). Bila upload ke hosting/cPanel/Netlify/dsb, akan
+  jalan normal.
+- Untuk test di komputer sendiri sebelum upload, boleh guna Live Server
+  extension (VS Code) atau jalankan: python3 -m http.server lepas tu buka
+  http://localhost:8000

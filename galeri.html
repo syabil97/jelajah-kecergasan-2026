@@ -1,68 +1,59 @@
 <!DOCTYPE html>
 <html lang="ms">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jelajah Kecergasan 2026 Peringkat Kebangsaan</title>
-<link rel="stylesheet" href="css/style.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jelajah Kecergasan 2026 Peringkat Kebangsaan</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="header-placeholder"></div>
 
-<header class="site-header">
-  <nav class="nav">
-    <a href="index.html" class="brand">
-      <span>
-        <span class="eyebrow">Jabatan Kesihatan Negeri, Negeri Sembilan</span>
-        <span class="title">Jelajah Kecergasan 2026 Peringkat Kebangsaan</span>
-      </span>
-    </a>
-    <button class="nav-toggle" aria-label="Buka menu">&#9776;</button>
-    <ul class="nav-links">
-      <li><a href="index.html">Utama</a></li>
-      <li><a href="sukan.html">Jadual Sukan</a></li>
-      <li><a href="keputusan.html">Keputusan</a></li>
-      <li><a href="pingat.html">Pungutan Pingat</a></li>
-      <li><a href="galeri.html">Galeri</a></li>
-      <li><a href="info.html">Info</a></li>
-    </ul>
-  </nav>
-</header>
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Kenangan</span>
+            <h2>Galeri Gambar</h2>
+          </div>
+        </div>
 
-<section class="section">
-  <div class="container">
-    <div class="section-head">
-      <div>
-        <span class="eyebrow">Kenangan</span>
-        <h2>Galeri Gambar</h2>
+        <div class="subtab-bar" id="subtab-bar"></div>
+
+        <div class="gallery-grid" id="galeri-grid">
+          <div class="loading-pulse">Memuatkan gambar...</div>
+        </div>
       </div>
+    </section>
+
+    <div class="lightbox" id="lightbox">
+      <button class="lightbox-close" id="lightbox-close" aria-label="Tutup">
+        &times;
+      </button>
+      <button
+        class="lightbox-nav lightbox-prev"
+        id="lightbox-prev"
+        aria-label="Sebelum"
+      >
+        &#10094;
+      </button>
+      <img class="lightbox-img" id="lightbox-img" src="" alt="" />
+      <div class="lightbox-cap" id="lightbox-cap"></div>
+      <button
+        class="lightbox-nav lightbox-next"
+        id="lightbox-next"
+        aria-label="Seterus"
+      >
+        &#10095;
+      </button>
     </div>
 
-    <div class="subtab-bar" id="subtab-bar"></div>
+    <div id="footer-placeholder"></div>
 
-    <div class="gallery-grid" id="galeri-grid">
-      <div class="loading-pulse">Memuatkan gambar...</div>
-    </div>
-  </div>
-</section>
-
-<div class="lightbox" id="lightbox">
-  <button class="lightbox-close" id="lightbox-close" aria-label="Tutup">&times;</button>
-  <button class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="Sebelum">&#10094;</button>
-  <img class="lightbox-img" id="lightbox-img" src="" alt="">
-  <div class="lightbox-cap" id="lightbox-cap"></div>
-  <button class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="Seterus">&#10095;</button>
-</div>
-
-<footer class="site-footer">
-  <div class="container">
-    <strong>Jelajah Kecergasan 2026 Peringkat Kebangsaan</strong><br>
-    Jabatan Kesihatan Negeri, Negeri Sembilan
-  </div>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/galeri.js"></script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/include.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/galeri.js"></script>
+  </body>
 </html>

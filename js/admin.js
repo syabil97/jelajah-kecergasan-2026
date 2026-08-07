@@ -126,6 +126,7 @@
      loadPingat();
      loadInfo();
      loadGaleri();
+     loadPaparan();
    }
    
    /* ================= KATEGORI SUKAN ================= */
@@ -910,4 +911,127 @@
      const { error } = await sb.from("galeri").delete().eq("id", id);
      if (error) return setMsg("galeri-status-msg", "Ralat: " + error.message, false);
      loadGaleri();
+   }
+
+   /* ================= PAPARAN (BANNER SLIDER & COUNTDOWN) ================= */
+   let semuaSlaidCache = [];
+
+   async function loadPaparan() {
+     await loadTetapanPaparan();
+     await loadSlaid();
+   }
+
+   async function loadTetapanPaparan() {
+     const { data, error } = await sb.from("tetapan_paparan").select("*").eq("id", 1).maybeSingle();
+     if (error) { console.error(error); return; }
+     if (!data) return;
+     document.getElementById("paparan-banner-aktif").checked = !!data.banner_aktif;
+     document.getElementById("paparan-countdown-aktif").checked = !!data.countdown_aktif;
+   }
+
+   document.getElementById("paparan-tetapan-simpan").addEventListener("click", async () => {
+     const payload = {
+       id: 1,
+       banner_aktif: document.getElementById("paparan-banner-aktif").checked,
+       countdown_aktif: document.getElementById("paparan-countdown-aktif").checked,
+       dikemaskini_pada: new Date().toISOString(),
+     };
+     const { error } = await sb.from("tetapan_paparan").upsert(payload);
+     if (error) return setMsg("paparan-tetapan-status-msg", "Ralat: " + error.message, false);
+     setMsg("paparan-tetapan-status-msg", "Tetapan disimpan.");
+   });
+
+   async function loadSlaid() {
+     const { data, error } = await sb.from("banner_slaid").select("*").order("urutan", { ascending: true });
+     const tbody = document.querySelector("#slaid-table tbody");
+     if (error) { tbody.innerHTML = `<tr><td colspan="4" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
+     semuaSlaidCache = data || [];
+
+     if (semuaSlaidCache.length === 0) {
+       tbody.innerHTML = `<tr><td colspan="4" class="empty-note">Belum ada slaid. Banner akan guna teks lalai sehingga slaid ditambah.</td></tr>`;
+       return;
+     }
+
+     tbody.innerHTML = semuaSlaidCache.map(row => {
+       let thumb = "&mdash;";
+       if (row.imej_path) {
+         const { data: urlData } = sb.storage.from(GALERI_BUCKET).getPublicUrl(row.imej_path);
+         thumb = `<img src="${urlData.publicUrl}" alt="" style="width:60px;height:36px;object-fit:cover;border-radius:4px;">`;
+       }
+       return `<tr>
+         <td>${row.urutan}</td>
+         <td>${row.tajuk || "<em>(gambar sahaja)</em>"}</td>
+         <td>${thumb}</td>
+         <td class="row-actions">
+           <button class="edit" onclick="mulaEditSlaid('${row.id}')">Edit</button>
+           <button class="del" onclick="deleteSlaid('${row.id}','${row.imej_path || ""}')">Padam</button>
+         </td>
+       </tr>`;
+     }).join("");
+   }
+
+   function mulaEditSlaid(id) {
+     const row = semuaSlaidCache.find(r => r.id === id);
+     if (!row) return;
+     document.getElementById("slaid-id").value = row.id;
+     document.getElementById("slaid-eyebrow").value = row.eyebrow || "";
+     document.getElementById("slaid-urutan").value = row.urutan || 0;
+     document.getElementById("slaid-tajuk").value = row.tajuk || "";
+     document.getElementById("slaid-teks").value = row.teks || "";
+     document.getElementById("slaid-cancel").style.display = "inline-block";
+     window.scrollTo({ top: document.getElementById("form-slaid").offsetTop - 20, behavior: "smooth" });
+   }
+
+   document.getElementById("slaid-cancel").addEventListener("click", () => {
+     document.getElementById("form-slaid").reset();
+     document.getElementById("slaid-id").value = "";
+     document.getElementById("slaid-cancel").style.display = "none";
+   });
+
+   document.getElementById("form-slaid").addEventListener("submit", async (e) => {
+     e.preventDefault();
+     const id = document.getElementById("slaid-id").value;
+     const file = document.getElementById("slaid-file").files[0];
+     const tajuk = document.getElementById("slaid-tajuk").value.trim();
+
+     let imejPath = id ? (semuaSlaidCache.find(r => r.id === id)?.imej_path || null) : null;
+
+     if (!file && !imejPath && !tajuk) {
+       return setMsg("slaid-status-msg", "Isi sekurang-kurangnya tajuk ATAU pilih gambar.", false);
+     }
+
+     if (file) {
+       const fileName = `banner/${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
+       setMsg("slaid-status-msg", "Sedang muat naik gambar...", true);
+       const { error: uploadError } = await sb.storage.from(GALERI_BUCKET).upload(fileName, file);
+       if (uploadError) return setMsg("slaid-status-msg", "Ralat muat naik: " + uploadError.message, false);
+       imejPath = fileName;
+     }
+
+     const payload = {
+       eyebrow: document.getElementById("slaid-eyebrow").value.trim() || null,
+       tajuk: tajuk || null,
+       teks: document.getElementById("slaid-teks").value.trim() || null,
+       urutan: parseInt(document.getElementById("slaid-urutan").value, 10) || 0,
+       imej_path: imejPath,
+     };
+
+     const { error } = id
+       ? await sb.from("banner_slaid").update(payload).eq("id", id)
+       : await sb.from("banner_slaid").insert(payload);
+
+     if (error) return setMsg("slaid-status-msg", "Ralat: " + error.message, false);
+     setMsg("slaid-status-msg", "Slaid disimpan.");
+     document.getElementById("form-slaid").reset();
+     document.getElementById("slaid-id").value = "";
+     document.getElementById("slaid-cancel").style.display = "none";
+     loadSlaid();
+   });
+
+   async function deleteSlaid(id, imejPath) {
+     if (!confirm("Padam slaid ini?")) return;
+     if (imejPath) await sb.storage.from(GALERI_BUCKET).remove([imejPath]);
+     const { error } = await sb.from("banner_slaid").delete().eq("id", id);
+     if (error) return setMsg("slaid-status-msg", "Ralat: " + error.message, false);
+     loadSlaid();
    }

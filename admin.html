@@ -40,6 +40,7 @@
       <button class="tab-btn" data-tab="pasukan">Pasukan</button>
       <button class="tab-btn" data-tab="info">Info</button>
       <button class="tab-btn" data-tab="galeri">Galeri</button>
+      <button class="tab-btn" data-tab="paparan">Paparan</button>
     </div>
 
     <!-- ---------------- KATEGORI SUKAN ---------------- -->
@@ -357,6 +358,62 @@
         </div>
       </div>
       <div class="gallery-preview" id="galeri-preview"></div>
+    </div>
+
+    <!-- ---------------- PAPARAN (banner slider & countdown) ---------------- -->
+    <div class="panel" id="panel-paparan">
+      <h2>Paparan Halaman Utama</h2>
+      <p class="hint">Kawal banner slider &amp; countdown besar di index.html. Boleh disable terus tanpa sentuh kod.</p>
+
+      <div class="field checkbox">
+        <input type="checkbox" id="paparan-banner-aktif">
+        <label>Aktifkan Banner Slider</label>
+      </div>
+      <div class="field checkbox" style="margin-top:8px;">
+        <input type="checkbox" id="paparan-countdown-aktif">
+        <label>Aktifkan Countdown Besar</label>
+      </div>
+      <div class="form-actions" style="margin-top:14px;">
+        <button type="button" class="btn-primary" id="paparan-tetapan-simpan">Simpan Tetapan</button>
+        <span class="status-msg" id="paparan-tetapan-status-msg"></span>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
+
+      <h2>Slaid Banner</h2>
+      <p class="hint">Tambah slaid satu-satu. Gambar opsyenal — kalau tiada, slaid papar teks sahaja atas latar gradient (macam sekarang). Susun ikut "Urutan" (nombor kecil dulu).</p>
+      <form class="entry-form" id="form-slaid">
+        <input type="hidden" id="slaid-id">
+        <div class="field">
+          <label>Eyebrow (label kecil, opsyenal)</label>
+          <input type="text" id="slaid-eyebrow" placeholder="cth: 17 – 22 Ogos 2026">
+        </div>
+        <div class="field">
+          <label>Urutan</label>
+          <input type="number" id="slaid-urutan" value="0" min="0">
+        </div>
+        <div class="field full">
+          <label>Tajuk (opsyenal &mdash; kosongkan kalau nak gambar sahaja)</label>
+          <input type="text" id="slaid-tajuk" placeholder="cth: Jelajah Kecergasan 2026">
+        </div>
+        <div class="field full">
+          <label>Teks (opsyenal)</label>
+          <textarea id="slaid-teks" placeholder="cth: Enam hari acara sukan merentas Negeri Sembilan."></textarea>
+        </div>
+        <div class="field full">
+          <label>Gambar Banner (saiz disyorkan 1600&times;500px)</label>
+          <input type="file" id="slaid-file" accept="image/*">
+          <span class="hint" style="margin:4px 0 0;">Kalau tajuk &amp; teks dikosongkan, banner papar gambar sahaja tanpa overlay teks.</span>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Simpan Slaid</button>
+          <button type="button" class="btn-cancel" id="slaid-cancel" style="display:none;">Batal Edit</button>
+          <span class="status-msg" id="slaid-status-msg"></span>
+        </div>
+      </form>
+      <table id="slaid-table"><thead><tr>
+        <th>Urutan</th><th>Tajuk</th><th>Gambar</th><th></th>
+      </tr></thead><tbody></tbody></table>
     </div>
 
   </div>

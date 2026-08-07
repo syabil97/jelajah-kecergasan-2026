@@ -10,6 +10,29 @@
 
 <div id="header-placeholder"></div>
 
+<section class="banner-slider" id="banner-slider" aria-label="Pengumuman utama" style="display:none;">
+  <div class="container banner-slider-inner">
+    <div class="banner-track" id="banner-track"></div>
+    <div class="banner-dots" id="banner-dots"></div>
+    <button class="banner-nav banner-prev" id="banner-prev" aria-label="Slaid sebelumnya">&larr;</button>
+    <button class="banner-nav banner-next" id="banner-next" aria-label="Slaid seterusnya">&rarr;</button>
+  </div>
+</section>
+
+<section class="countdown-section" id="countdown-section" style="display:none;">
+  <div class="container countdown-inner">
+    <span class="eyebrow">Detik Bermula</span>
+    <h2>Countdown Ke Karnival</h2>
+    <div class="countdown-grid" id="countdown-grid">
+      <div class="countdown-box"><strong id="cd-hari">--</strong><span>Hari</span></div>
+      <div class="countdown-box"><strong id="cd-jam">--</strong><span>Jam</span></div>
+      <div class="countdown-box"><strong id="cd-minit">--</strong><span>Minit</span></div>
+      <div class="countdown-box"><strong id="cd-saat">--</strong><span>Saat</span></div>
+    </div>
+    <p class="countdown-status" id="countdown-status"></p>
+  </div>
+</section>
+
 <section class="hero">
   <div class="container hero-inner">
     <div>
@@ -74,5 +97,6 @@
 <script src="js/config.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/index.js"></script>
+<script src="js/banner-countdown.js"></script>
 </body>
 </html>

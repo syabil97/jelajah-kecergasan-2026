@@ -150,7 +150,7 @@ function updateCountdownBesar() {
   if (!hariEl) return;
 
   let sasaran = mula;
-  let statusTeks = "Sehingga karnival bermula";
+  let statusTeks = "Sehingga jelajah bermula";
 
   if (sekarang > tamat) {
     hariEl.textContent = "0";
@@ -163,7 +163,7 @@ function updateCountdownBesar() {
 
   if (sekarang >= mula && sekarang <= tamat) {
     sasaran = tamat;
-    statusTeks = "Sehingga karnival tamat";
+    statusTeks = "Sehingga jelajah tamat";
   }
 
   const beza = sasaran - sekarang;

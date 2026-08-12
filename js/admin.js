@@ -515,31 +515,96 @@
    }
    
    /* ================= KEPUTUSAN (perlawanan) ================= */
+   let semuaKeputusanCache = [];
+   let semuaKeputusanPasukanCache = [];
+   let keputusanFilterKategoriNilai = "";
+   let keputusanFilterStatusNilai = "";
+   let keputusanFilterCariNilai = "";
+
    async function loadKeputusan() {
      const { data, error } = await sb.from("perlawanan").select("*").order("tarikh", { ascending: false });
      const tbody = document.querySelector("#keputusan-table tbody");
-     tbody.innerHTML = "";
      if (error) { tbody.innerHTML = `<tr><td colspan="8" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
-     if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="empty-note">Belum ada keputusan.</td></tr>`; return; }
-   
+
      const { data: pasukanList } = await sb.from("pasukan").select("*");
-     const namaPasukan = id => (pasukanList || []).find(p => p.id === id)?.nama || "-";
-   
-     data.forEach(row => {
-       tbody.innerHTML += `<tr>
+     semuaKeputusanCache = data || [];
+     semuaKeputusanPasukanCache = pasukanList || [];
+
+     // isi dropdown tapis kategori ikut kategori yang wujud dalam rekod keputusan
+     const filterKategoriSel = document.getElementById("keputusan-filter-kategori");
+     const curFilterKategori = filterKategoriSel.value;
+     filterKategoriSel.innerHTML = '<option value="">-- semua kategori --</option>';
+     const kategoriSeen = new Set();
+     semuaKeputusanCache.forEach(row => {
+       if (row.kategori_sukan && !kategoriSeen.has(row.kategori_sukan)) {
+         kategoriSeen.add(row.kategori_sukan);
+         filterKategoriSel.innerHTML += `<option value="${row.kategori_sukan}">${row.kategori_sukan}</option>`;
+       }
+     });
+     if (curFilterKategori) filterKategoriSel.value = curFilterKategori;
+
+     renderKeputusanTable();
+   }
+
+   function namaPasukanKeputusan(id) {
+     return (semuaKeputusanPasukanCache || []).find(p => p.id === id)?.nama || "-";
+   }
+
+   function getKeputusanTersaring() {
+     return semuaKeputusanCache.filter(row => {
+       const kenaKategori = !keputusanFilterKategoriNilai || row.kategori_sukan === keputusanFilterKategoriNilai;
+       const kenaStatus = !keputusanFilterStatusNilai || row.status === keputusanFilterStatusNilai;
+       const kenaCari = !keputusanFilterCariNilai ||
+         namaPasukanKeputusan(row.pasukan_a_id).toLowerCase().includes(keputusanFilterCariNilai) ||
+         namaPasukanKeputusan(row.pasukan_b_id).toLowerCase().includes(keputusanFilterCariNilai);
+       return kenaKategori && kenaStatus && kenaCari;
+     });
+   }
+
+   function renderKeputusanTable() {
+     const tbody = document.querySelector("#keputusan-table tbody");
+     const tersaring = getKeputusanTersaring();
+
+     if (tersaring.length === 0) {
+       tbody.innerHTML = `<tr><td colspan="8" class="empty-note">Tiada keputusan sepadan dengan tapisan.</td></tr>`;
+       return;
+     }
+
+     tbody.innerHTML = tersaring.map(row => `<tr>
          <td>${row.kategori_sukan || ""}</td>
          <td>${row.pusingan || ""}</td>
-         <td>${namaPasukan(row.pasukan_a_id)}</td>
+         <td>${namaPasukanKeputusan(row.pasukan_a_id)}</td>
          <td>${row.skor_a ?? "-"} : ${row.skor_b ?? "-"}</td>
-         <td>${namaPasukan(row.pasukan_b_id)}</td>
+         <td>${namaPasukanKeputusan(row.pasukan_b_id)}</td>
          <td>${row.tarikh || ""}</td>
          <td>${statusLabel[row.status] || row.status || ""}</td>
          <td class="row-actions">
            <button class="edit" onclick='editKeputusan(${JSON.stringify(row)})'>Edit</button>
            <button class="del" onclick="deleteKeputusan('${row.id}')">Padam</button>
-         </td></tr>`;
-     });
+         </td></tr>`).join("");
    }
+
+   document.getElementById("keputusan-filter-kategori").addEventListener("change", (e) => {
+     keputusanFilterKategoriNilai = e.target.value;
+     renderKeputusanTable();
+   });
+   document.getElementById("keputusan-filter-status").addEventListener("change", (e) => {
+     keputusanFilterStatusNilai = e.target.value;
+     renderKeputusanTable();
+   });
+   document.getElementById("keputusan-filter-cari").addEventListener("input", (e) => {
+     keputusanFilterCariNilai = e.target.value.trim().toLowerCase();
+     renderKeputusanTable();
+   });
+   document.getElementById("keputusan-filter-reset").addEventListener("click", () => {
+     document.getElementById("keputusan-filter-kategori").value = "";
+     document.getElementById("keputusan-filter-status").value = "";
+     document.getElementById("keputusan-filter-cari").value = "";
+     keputusanFilterKategoriNilai = "";
+     keputusanFilterStatusNilai = "";
+     keputusanFilterCariNilai = "";
+     renderKeputusanTable();
+   });
    
    document.getElementById("form-keputusan").addEventListener("submit", async (e) => {
      e.preventDefault();
@@ -596,31 +661,105 @@
    }
    
    /* ================= PINGAT ================= */
+   const jenisPingatLabel = { emas: "🥇 Emas", perak: "🥈 Perak", gangsa: "🥉 Gangsa" };
+   let semuaPingatCache = [];
+   let semuaPingatPasukanCache = [];
+   let semuaPingatSukanCache = [];
+   let pingatTableFilterKategoriNilai = "";
+   let pingatTableFilterJenisNilai = "";
+   let pingatTableFilterPasukanNilai = "";
+
    async function loadPingat() {
      const { data, error } = await sb.from("pingat").select("*").order("dianugerah_pada", { ascending: false });
      const tbody = document.querySelector("#pingat-table tbody");
-     tbody.innerHTML = "";
      if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
-     if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Belum ada rekod pingat.</td></tr>`; return; }
    
      const { data: pasukanList } = await sb.from("pasukan").select("*");
      const { data: sukanList } = await sb.from("sukan").select("*");
-     const namaPasukan = id => (pasukanList || []).find(p => p.id === id)?.nama || "-";
-     const namaAcara = id => (sukanList || []).find(s => s.id === id)?.nama_acara || "-";
-     const jenisLabel = { emas: "🥇 Emas", perak: "🥈 Perak", gangsa: "🥉 Gangsa" };
-   
-     data.forEach(row => {
-       tbody.innerHTML += `<tr>
-         <td>${namaAcara(row.sukan_id)}</td>
+     semuaPingatCache = data || [];
+     semuaPingatPasukanCache = pasukanList || [];
+     semuaPingatSukanCache = sukanList || [];
+
+     // isi dropdown tapis kategori
+     const filterKategoriSel = document.getElementById("pingat-table-filter-kategori");
+     const curFilterKategori = filterKategoriSel.value;
+     filterKategoriSel.innerHTML = '<option value="">-- semua kategori --</option>';
+     const kategoriSeen = new Set();
+     semuaPingatCache.forEach(row => {
+       if (row.kategori && !kategoriSeen.has(row.kategori)) {
+         kategoriSeen.add(row.kategori);
+         filterKategoriSel.innerHTML += `<option value="${row.kategori}">${row.kategori}</option>`;
+       }
+     });
+     if (curFilterKategori) filterKategoriSel.value = curFilterKategori;
+
+     // isi dropdown tapis pasukan
+     const filterPasukanSel = document.getElementById("pingat-table-filter-pasukan");
+     const curFilterPasukan = filterPasukanSel.value;
+     filterPasukanSel.innerHTML = '<option value="">-- semua pasukan --</option>' +
+       semuaPingatPasukanCache.map(p => `<option value="${p.id}">${p.nama}</option>`).join("");
+     if (curFilterPasukan) filterPasukanSel.value = curFilterPasukan;
+
+     renderPingatTable();
+   }
+
+   function namaPasukanPingat(id) {
+     return (semuaPingatPasukanCache || []).find(p => p.id === id)?.nama || "-";
+   }
+   function namaAcaraPingat(id) {
+     return (semuaPingatSukanCache || []).find(s => s.id === id)?.nama_acara || "-";
+   }
+
+   function getPingatTersaring() {
+     return semuaPingatCache.filter(row => {
+       const kenaKategori = !pingatTableFilterKategoriNilai || row.kategori === pingatTableFilterKategoriNilai;
+       const kenaJenis = !pingatTableFilterJenisNilai || row.jenis === pingatTableFilterJenisNilai;
+       const kenaPasukan = !pingatTableFilterPasukanNilai || row.pasukan_id === pingatTableFilterPasukanNilai;
+       return kenaKategori && kenaJenis && kenaPasukan;
+     });
+   }
+
+   function renderPingatTable() {
+     const tbody = document.querySelector("#pingat-table tbody");
+     const tersaring = getPingatTersaring();
+
+     if (tersaring.length === 0) {
+       tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Tiada rekod pingat sepadan dengan tapisan.</td></tr>`;
+       return;
+     }
+
+     tbody.innerHTML = tersaring.map(row => `<tr>
+         <td>${namaAcaraPingat(row.sukan_id)}</td>
          <td>${row.kategori || ""}</td>
-         <td>${namaPasukan(row.pasukan_id)}</td>
-         <td>${jenisLabel[row.jenis] || row.jenis || ""}</td>
+         <td>${namaPasukanPingat(row.pasukan_id)}</td>
+         <td>${jenisPingatLabel[row.jenis] || row.jenis || ""}</td>
          <td class="row-actions">
            <button class="edit" onclick='editPingat(${JSON.stringify(row)})'>Edit</button>
            <button class="del" onclick="deletePingat('${row.id}')">Padam</button>
-         </td></tr>`;
-     });
+         </td></tr>`).join("");
    }
+
+   document.getElementById("pingat-table-filter-kategori").addEventListener("change", (e) => {
+     pingatTableFilterKategoriNilai = e.target.value;
+     renderPingatTable();
+   });
+   document.getElementById("pingat-table-filter-jenis").addEventListener("change", (e) => {
+     pingatTableFilterJenisNilai = e.target.value;
+     renderPingatTable();
+   });
+   document.getElementById("pingat-table-filter-pasukan").addEventListener("change", (e) => {
+     pingatTableFilterPasukanNilai = e.target.value;
+     renderPingatTable();
+   });
+   document.getElementById("pingat-table-filter-reset").addEventListener("click", () => {
+     document.getElementById("pingat-table-filter-kategori").value = "";
+     document.getElementById("pingat-table-filter-jenis").value = "";
+     document.getElementById("pingat-table-filter-pasukan").value = "";
+     pingatTableFilterKategoriNilai = "";
+     pingatTableFilterJenisNilai = "";
+     pingatTableFilterPasukanNilai = "";
+     renderPingatTable();
+   });
    
    document.getElementById("form-pingat").addEventListener("submit", async (e) => {
      e.preventDefault();
@@ -689,10 +828,12 @@
    document.getElementById("form-info").addEventListener("submit", async (e) => {
      e.preventDefault();
      const id = document.getElementById("info-id").value;
+     const tarikhInput = document.getElementById("info-tarikh").value;
      const payload = {
        tajuk: document.getElementById("info-tajuk").value.trim(),
        kandungan: document.getElementById("info-kandungan").value.trim(),
        penting: document.getElementById("info-penting").checked,
+       dibuat_pada: tarikhInput ? new Date(tarikhInput + "T00:00:00").toISOString() : new Date().toISOString(),
      };
      const { error } = id
        ? await sb.from("info").update(payload).eq("id", id)
@@ -708,11 +849,13 @@
      document.getElementById("info-tajuk").value = row.tajuk || "";
      document.getElementById("info-kandungan").value = row.kandungan || "";
      document.getElementById("info-penting").checked = !!row.penting;
+     document.getElementById("info-tarikh").value = row.dibuat_pada ? row.dibuat_pada.slice(0, 10) : "";
      document.getElementById("info-cancel").style.display = "inline-block";
    }
    function resetInfoForm() {
      document.getElementById("form-info").reset();
      document.getElementById("info-id").value = "";
+     document.getElementById("info-tarikh").value = "";
      document.getElementById("info-cancel").style.display = "none";
    }
    document.getElementById("info-cancel").addEventListener("click", resetInfoForm);
@@ -944,11 +1087,11 @@
    async function loadSlaid() {
      const { data, error } = await sb.from("banner_slaid").select("*").order("urutan", { ascending: true });
      const tbody = document.querySelector("#slaid-table tbody");
-     if (error) { tbody.innerHTML = `<tr><td colspan="4" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
+     if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
      semuaSlaidCache = data || [];
 
      if (semuaSlaidCache.length === 0) {
-       tbody.innerHTML = `<tr><td colspan="4" class="empty-note">Belum ada slaid. Banner akan guna teks lalai sehingga slaid ditambah.</td></tr>`;
+       tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Belum ada slaid. Banner akan guna teks lalai sehingga slaid ditambah.</td></tr>`;
        return;
      }
 
@@ -958,10 +1101,15 @@
          const { data: urlData } = sb.storage.from(GALERI_BUCKET).getPublicUrl(row.imej_path);
          thumb = `<img src="${urlData.publicUrl}" alt="" style="width:60px;height:36px;object-fit:cover;border-radius:4px;">`;
        }
+       const aktif = row.aktif !== false; // default aktif=true kalau kolum belum diisi
+       const statusBadge = aktif
+         ? '<span style="color:var(--success);">● Aktif</span>'
+         : '<span style="color:var(--danger);">● Tak Aktif</span>';
        return `<tr>
          <td>${row.urutan}</td>
          <td>${row.tajuk || "<em>(gambar sahaja)</em>"}</td>
          <td>${thumb}</td>
+         <td>${statusBadge}</td>
          <td class="row-actions">
            <button class="edit" onclick="mulaEditSlaid('${row.id}')">Edit</button>
            <button class="del" onclick="deleteSlaid('${row.id}','${row.imej_path || ""}')">Padam</button>
@@ -978,6 +1126,7 @@
      document.getElementById("slaid-urutan").value = row.urutan || 0;
      document.getElementById("slaid-tajuk").value = row.tajuk || "";
      document.getElementById("slaid-teks").value = row.teks || "";
+     document.getElementById("slaid-aktif").checked = row.aktif !== false;
      document.getElementById("slaid-cancel").style.display = "inline-block";
      window.scrollTo({ top: document.getElementById("form-slaid").offsetTop - 20, behavior: "smooth" });
    }
@@ -985,6 +1134,7 @@
    document.getElementById("slaid-cancel").addEventListener("click", () => {
      document.getElementById("form-slaid").reset();
      document.getElementById("slaid-id").value = "";
+     document.getElementById("slaid-aktif").checked = true;
      document.getElementById("slaid-cancel").style.display = "none";
    });
 
@@ -1014,6 +1164,7 @@
        teks: document.getElementById("slaid-teks").value.trim() || null,
        urutan: parseInt(document.getElementById("slaid-urutan").value, 10) || 0,
        imej_path: imejPath,
+       aktif: document.getElementById("slaid-aktif").checked,
      };
 
      const { error } = id
@@ -1024,6 +1175,7 @@
      setMsg("slaid-status-msg", "Slaid disimpan.");
      document.getElementById("form-slaid").reset();
      document.getElementById("slaid-id").value = "";
+     document.getElementById("slaid-aktif").checked = true;
      document.getElementById("slaid-cancel").style.display = "none";
      loadSlaid();
    });

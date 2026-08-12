@@ -3,6 +3,17 @@
 // ============================================================
 
 let semuaAcara = [];
+let kategoriAktif = "semua";
+let statusAktif = "";
+
+// Keutamaan susunan status: sedang berlangsung dulu, kemudian akan datang,
+// selesai, dan ditangguhkan di paling bawah.
+const STATUS_ORDER = {
+  sedang_berlangsung: 0,
+  akan_datang: 1,
+  selesai: 2,
+  ditangguhkan: 3,
+};
 
 async function muatkanSenaraiAcara() {
   const el = document.getElementById("senarai-acara");
@@ -20,7 +31,13 @@ async function muatkanSenaraiAcara() {
   }
 
   semuaAcara = data || [];
-  paparkanAcara(semuaAcara);
+  paparkanSubtab();
+  paparkanAcaraTertapis();
+
+  document.getElementById("tapis-status").addEventListener("change", (e) => {
+    statusAktif = e.target.value;
+    paparkanAcaraTertapis();
+  });
 }
 
 function formatJulatTarikh(a) {
@@ -49,6 +66,58 @@ function kiraStatusAuto(a) {
   return "sedang_berlangsung";
 }
 
+// Senarai kategori unik dari data, ikut susunan pertama kali dijumpai.
+function senaraiKategori() {
+  const kategori = [];
+  semuaAcara.forEach((a) => {
+    const k = a.kategori_sukan;
+    if (k && !kategori.includes(k)) kategori.push(k);
+  });
+  return kategori;
+}
+
+function paparkanSubtab() {
+  const bar = document.getElementById("subtab-bar");
+  const kategori = senaraiKategori();
+
+  const semuaBtn = `<button class="subtab-btn${kategoriAktif === "semua" ? " active" : ""}" data-kategori="semua">Semua</button>`;
+  const btnLain = kategori.map((k) => `
+    <button class="subtab-btn${kategoriAktif === k ? " active" : ""}" data-kategori="${escapeHtml(k)}">${escapeHtml(k)}</button>
+  `).join("");
+
+  bar.innerHTML = semuaBtn + btnLain;
+
+  bar.querySelectorAll(".subtab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      kategoriAktif = btn.dataset.kategori;
+      paparkanSubtab();
+      paparkanAcaraTertapis();
+    });
+  });
+}
+
+function paparkanAcaraTertapis() {
+  let tertapis = kategoriAktif === "semua"
+    ? semuaAcara
+    : semuaAcara.filter((a) => a.kategori_sukan === kategoriAktif);
+
+  if (statusAktif) {
+    tertapis = tertapis.filter((a) => kiraStatusAuto(a) === statusAktif);
+  }
+
+  const disusun = [...tertapis].sort((a, b) => {
+    const statusA = STATUS_ORDER[kiraStatusAuto(a)] ?? 99;
+    const statusB = STATUS_ORDER[kiraStatusAuto(b)] ?? 99;
+    if (statusA !== statusB) return statusA - statusB;
+
+    const tarikhA = `${a.tarikh || ""}T${a.masa || "00:00"}`;
+    const tarikhB = `${b.tarikh || ""}T${b.masa || "00:00"}`;
+    return tarikhA.localeCompare(tarikhB);
+  });
+
+  paparkanAcara(disusun);
+}
+
 function paparkanAcara(senarai) {
   const el = document.getElementById("senarai-acara");
 
@@ -70,14 +139,5 @@ function paparkanAcara(senarai) {
     </div>
   `).join("");
 }
-
-document.getElementById("tapis-status").addEventListener("change", (e) => {
-  const nilai = e.target.value;
-  if (!nilai) {
-    paparkanAcara(semuaAcara);
-  } else {
-    paparkanAcara(semuaAcara.filter((a) => kiraStatusAuto(a) === nilai));
-  }
-});
 
 muatkanSenaraiAcara();

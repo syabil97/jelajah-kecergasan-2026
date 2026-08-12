@@ -109,7 +109,7 @@ function paparkanKeputusan(kategori) {
   el.innerHTML = html;
 }
 
-const JENIS_LABEL = { emas: "Juara", perak: "Naib Juara", gangsa: "Ketiga" };
+const JENIS_LABEL = { emas: "Juara 🥇", perak: "Naib Juara 🥈", gangsa: "Ketiga 🥉" };
 const JENIS_URUTAN = ["emas", "perak", "gangsa"];
 const RUMI = ["I", "II", "III", "IV", "V"];
 
@@ -179,12 +179,16 @@ function kadPerlawanan(m) {
       </div>
       <div class="match-teams">
         <div class="match-team team-a">
-          <span class="team-dot" style="background:${m.warna_pasukan_a || "#00A99D"}"></span>
+          ${m.logo_url_a
+            ? `<img class="team-flag" src="${escapeHtml(m.logo_url_a)}" alt="">`
+            : `<span class="team-dot" style="background:${m.warna_pasukan_a || "#00A99D"}"></span>`}
           ${escapeHtml(m.nama_pasukan_a || "Belum Ditentukan")}
         </div>
         <div class="match-score">${skorPaparan}</div>
         <div class="match-team team-b">
-          <span class="team-dot" style="background:${m.warna_pasukan_b || "#00A99D"}"></span>
+          ${m.logo_url_b
+            ? `<img class="team-flag" src="${escapeHtml(m.logo_url_b)}" alt="">`
+            : `<span class="team-dot" style="background:${m.warna_pasukan_b || "#00A99D"}"></span>`}
           ${escapeHtml(m.nama_pasukan_b || "Belum Ditentukan")}
         </div>
       </div>

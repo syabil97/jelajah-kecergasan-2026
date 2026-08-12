@@ -193,7 +193,11 @@ async function initPaparan() {
     let slaidSenarai = [];
     try {
       const { data, error } = await supabaseClient.from("banner_slaid").select("*").order("urutan", { ascending: true });
-      if (!error && data) slaidSenarai = data;
+      if (!error && data) {
+        // papar hanya slaid yang aktif (row.aktif === false bermakna dinyahaktifkan
+        // dari Admin Panel; kalau kolum tiada/null, anggap aktif secara lalai)
+        slaidSenarai = data.filter(row => row.aktif !== false);
+      }
     } catch (err) {
       console.error(err);
     }

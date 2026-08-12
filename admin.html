@@ -204,6 +204,31 @@
           <span class="status-msg" id="keputusan-status-msg"></span>
         </div>
       </form>
+      <div class="entry-form" style="align-items:flex-end;">
+        <div class="field">
+          <label>Tapis Kategori</label>
+          <select id="keputusan-filter-kategori">
+            <option value="">-- semua kategori --</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tapis Status</label>
+          <select id="keputusan-filter-status">
+            <option value="">-- semua status --</option>
+            <option value="akan_datang">Akan Datang</option>
+            <option value="sedang_berlangsung">Sedang Berlangsung</option>
+            <option value="selesai">Selesai</option>
+            <option value="ditangguhkan">Ditangguhkan</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Cari Pasukan</label>
+          <input type="text" id="keputusan-filter-cari" placeholder="cth: Selangor">
+        </div>
+        <div class="form-actions" style="margin:0;">
+          <button type="button" class="btn-cancel" id="keputusan-filter-reset">Reset</button>
+        </div>
+      </div>
       <table id="keputusan-table"><thead><tr>
         <th>Kategori</th><th>Pusingan</th><th>Pasukan A</th><th>Skor</th><th>Pasukan B</th><th>Tarikh</th><th>Status</th><th></th>
       </tr></thead><tbody></tbody></table>
@@ -250,6 +275,32 @@
           <span class="status-msg" id="pingat-status-msg"></span>
         </div>
       </form>
+      <div class="entry-form" style="align-items:flex-end;">
+        <div class="field">
+          <label>Tapis Kategori</label>
+          <select id="pingat-table-filter-kategori">
+            <option value="">-- semua kategori --</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tapis Jenis Pingat</label>
+          <select id="pingat-table-filter-jenis">
+            <option value="">-- semua jenis --</option>
+            <option value="emas">Emas</option>
+            <option value="perak">Perak</option>
+            <option value="gangsa">Gangsa</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tapis Pasukan</label>
+          <select id="pingat-table-filter-pasukan">
+            <option value="">-- semua pasukan --</option>
+          </select>
+        </div>
+        <div class="form-actions" style="margin:0;">
+          <button type="button" class="btn-cancel" id="pingat-table-filter-reset">Reset</button>
+        </div>
+      </div>
       <table id="pingat-table"><thead><tr>
         <th>Acara</th><th>Kategori</th><th>Pasukan</th><th>Jenis Pingat</th><th></th>
       </tr></thead><tbody></tbody></table>
@@ -294,7 +345,11 @@
           <label>Kandungan</label>
           <textarea id="info-kandungan" required></textarea>
         </div>
-        <div class="field checkbox full">
+        <div class="field">
+          <label>Tarikh</label>
+          <input type="date" id="info-tarikh">
+        </div>
+        <div class="field checkbox">
           <input type="checkbox" id="info-penting">
           <label>Tandakan sebagai pengumuman PENTING</label>
         </div>
@@ -392,6 +447,10 @@
           <label>Urutan</label>
           <input type="number" id="slaid-urutan" value="0" min="0">
         </div>
+        <div class="field checkbox">
+          <input type="checkbox" id="slaid-aktif" checked>
+          <label>Aktif (papar di banner)</label>
+        </div>
         <div class="field full">
           <label>Tajuk (opsyenal &mdash; kosongkan kalau nak gambar sahaja)</label>
           <input type="text" id="slaid-tajuk" placeholder="cth: Jelajah Kecergasan 2026">
@@ -412,7 +471,7 @@
         </div>
       </form>
       <table id="slaid-table"><thead><tr>
-        <th>Urutan</th><th>Tajuk</th><th>Gambar</th><th></th>
+        <th>Urutan</th><th>Tajuk</th><th>Gambar</th><th>Status</th><th></th>
       </tr></thead><tbody></tbody></table>
     </div>
 

@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 const BULAN_MS = [
   "Jan", "Feb", "Mac", "Apr", "Mei", "Jun",
-  "Jul", "Ogo", "Sep", "Okt", "Nov", "Dis"
+  "Jul", "Ogos", "Sep", "Okt", "Nov", "Dis"
 ];
 
 function formatTarikh(tarikhStr) {

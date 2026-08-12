@@ -68,7 +68,7 @@
    }
    
    /* ---------------- ADMIN LOGIN ---------------- */
-   .admin-login {
+   /* .admin-login {
      position: fixed;
      right: 24px;
      top: 14px;
@@ -90,7 +90,7 @@
 
    @media (max-width: 768px) {
      .admin-login { display: none; }
-   }
+   } */
 
    /* ---------------- NAV ---------------- */
    .site-header {

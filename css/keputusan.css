@@ -1,0 +1,224 @@
+/* ============================================================
+   KEPUTUSAN.CSS — Style khusus untuk halaman Keputusan
+   (Sub-tab kategori, Match Cards, Kad Kedudukan/Pingat)
+   ============================================================ */
+
+/* ---------------- MATCH CARDS (Keputusan / Perlawanan) ---------------- */
+.match-round-group {
+  margin-bottom: 32px;
+}
+
+.match-round-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--teal-500);
+  margin-bottom: 14px;
+  display: block;
+}
+
+.match-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.match-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(15,44,58,0.06);
+  padding: 16px 20px;
+}
+
+.match-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.match-date {
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-600);
+}
+
+.match-teams {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 28px; /* jarak lebih luas supaya nama pasukan tak terlalu dekat dengan markah */
+}
+
+.match-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--navy-900);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.match-team.team-b { justify-content: flex-start; text-align: right; flex-direction: row-reverse; }
+
+.match-team .team-dot { width: 12px; height: 12px; flex-shrink: 0; }
+
+.match-team .team-flag {
+  width: 24px;
+  height: 16px;
+  border-radius: 2px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.match-score {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--navy-950);
+  padding: 4px 16px;
+  background: var(--cream-100);
+  border-radius: 8px;
+  min-width: 90px;
+  justify-content: center;
+}
+
+.match-score .vs-label {
+  font-size: 13px;
+  color: var(--ink-600);
+  font-weight: 400;
+}
+
+.match-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(15,44,58,0.08);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.match-meta-text {
+  font-size: 12px;
+  color: var(--ink-600);
+}
+
+@media (max-width: 620px) {
+  .match-teams { grid-template-columns: 1fr; gap: 8px; }
+  .match-team.team-b { flex-direction: row; justify-content: flex-start; text-align: left; }
+  .match-score { justify-self: center; }
+}
+
+/* ---------------- KAD KEDUDUKAN (Juara / Naib Juara / Ketiga) ---------------- */
+.kedudukan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kedudukan-card {
+  border: 1px solid #dde3e9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.kedudukan-card-head {
+  background: #c3d69b;
+  color: #1c2733;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 16px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.kedudukan-card-body {
+  padding: 6px 16px;
+}
+
+.kedudukan-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eef1f4;
+}
+
+.kedudukan-row:last-child {
+  border-bottom: none;
+}
+
+.kedudukan-label {
+  flex: 0 0 130px;
+  font-size: 13px;
+  color: #6b7785;
+  font-weight: 600;
+}
+
+.kedudukan-pasukan {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.kedudukan-row-bersama {
+  align-items: flex-start;
+}
+
+.kedudukan-pasukan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.kedudukan-pasukan-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kedudukan-rumi {
+  font-size: 12px;
+  color: #6b7785;
+  width: 22px;
+}
+
+.kedudukan-pasukan .team-dot,
+.kedudukan-pasukan-item .team-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.kedudukan-pasukan .team-flag,
+.kedudukan-pasukan-item .team-flag {
+  width: 24px;
+  height: 16px;
+  border-radius: 2px;
+  object-fit: cover;
+  vertical-align: middle;
+  margin-right: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}

@@ -67,13 +67,25 @@ function kiraStatusAuto(a) {
 }
 
 // Senarai kategori unik dari data, ikut susunan pertama kali dijumpai.
+// Kategori yang semua acaranya sudah "selesai" akan diletak di belah kanan (paling akhir).
 function senaraiKategori() {
   const kategori = [];
   semuaAcara.forEach((a) => {
     const k = a.kategori_sukan;
     if (k && !kategori.includes(k)) kategori.push(k);
   });
-  return kategori;
+
+  const semuaSelesai = (k) =>
+    semuaAcara
+      .filter((a) => a.kategori_sukan === k)
+      .every((a) => kiraStatusAuto(a) === "selesai");
+
+  return kategori.sort((a, b) => {
+    const aSelesai = semuaSelesai(a);
+    const bSelesai = semuaSelesai(b);
+    if (aSelesai === bSelesai) return 0;
+    return aSelesai ? 1 : -1;
+  });
 }
 
 function paparkanSubtab() {

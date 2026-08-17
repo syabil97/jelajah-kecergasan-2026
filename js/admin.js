@@ -127,6 +127,7 @@
      loadInfo();
      loadGaleri();
      loadPaparan();
+     loadVideo();
    }
    
    /* ================= KATEGORI SUKAN ================= */
@@ -450,7 +451,15 @@
    document.getElementById("galeri-filter-kategori").addEventListener("change", (e) => {
      populateGaleriSukanOptions(e.target.value);
    });
-   
+
+   // UX: bila admin isi Kategori Am, disable dropdown Kategori Sukan/Acara Sukan
+   // (elak admin isi kedua-dua sekali gus - mengelirukan).
+   document.getElementById("galeri-kategori-am").addEventListener("input", (e) => {
+     const diisi = e.target.value.trim().length > 0;
+     document.getElementById("galeri-filter-kategori").disabled = diisi;
+     document.getElementById("galeri-sukan").disabled = diisi || !document.getElementById("galeri-filter-kategori").value;
+   });
+
    document.getElementById("form-sukan").addEventListener("submit", async (e) => {
      e.preventDefault();
      const id = document.getElementById("sukan-id").value;
@@ -871,6 +880,7 @@
    let semuaGaleriCache = [];
    let galeriAdminFilterKategori = "";
    let galeriAdminFilterSukan = "";
+   let galeriAdminFilterKategoriAm = "";
    let galeriAdminSearchTerm = "";
 
    async function loadGaleri() {
@@ -892,7 +902,25 @@
      if (curFilterKategori) filterKategoriSel.value = curFilterKategori;
 
      populateGaleriAdminFilterSukan(filterKategoriSel.value);
+     populateGaleriKategoriAmOptions();
      renderGaleriPreview();
+   }
+
+   // Isi datalist (form upload) & dropdown tapis dengan nilai kategori_am unik yang sedia ada,
+   // supaya admin nampak apa yang dah pernah digunakan (elak duplikat macam "Pendaftaran" vs "pendaftaran").
+   function populateGaleriKategoriAmOptions() {
+     const nilaiUnik = [...new Set(semuaGaleriCache.map(r => r.kategori_am).filter(Boolean))].sort();
+
+     const datalist = document.getElementById("galeri-kategori-am-list");
+     if (datalist) datalist.innerHTML = nilaiUnik.map(v => `<option value="${v}"></option>`).join("");
+
+     const filterSel = document.getElementById("galeri-admin-filter-kategori-am");
+     if (filterSel) {
+       const current = filterSel.value;
+       filterSel.innerHTML = '<option value="">-- semua kategori am --</option>' +
+         nilaiUnik.map(v => `<option value="${v}">${v}</option>`).join("");
+       if (current) filterSel.value = current;
+     }
    }
 
    function populateGaleriAdminFilterSukan(kategori) {
@@ -930,11 +958,17 @@
      galeriAdminSearchTerm = e.target.value.trim().toLowerCase();
      renderGaleriPreview();
    });
+   document.getElementById("galeri-admin-filter-kategori-am").addEventListener("change", (e) => {
+     galeriAdminFilterKategoriAm = e.target.value;
+     renderGaleriPreview();
+   });
    document.getElementById("galeri-admin-filter-reset").addEventListener("click", () => {
      document.getElementById("galeri-admin-filter-kategori").value = "";
      document.getElementById("galeri-admin-search").value = "";
+     document.getElementById("galeri-admin-filter-kategori-am").value = "";
      galeriAdminFilterKategori = "";
      galeriAdminFilterSukan = "";
+     galeriAdminFilterKategoriAm = "";
      galeriAdminSearchTerm = "";
      populateGaleriAdminFilterSukan("");
      renderGaleriPreview();
@@ -946,8 +980,9 @@
      const tersaring = semuaGaleriCache.filter(row => {
        const kenaKategori = !galeriAdminFilterKategori || row.sukan?.kategori_sukan === galeriAdminFilterKategori;
        const kenaSukan = !galeriAdminFilterSukan || row.sukan_id === galeriAdminFilterSukan;
+       const kenaKategoriAm = !galeriAdminFilterKategoriAm || row.kategori_am === galeriAdminFilterKategoriAm;
        const kenaCari = !galeriAdminSearchTerm || (row.tajuk || "").toLowerCase().includes(galeriAdminSearchTerm);
-       return kenaKategori && kenaSukan && kenaCari;
+       return kenaKategori && kenaSukan && kenaKategoriAm && kenaCari;
      });
 
      if (tersaring.length === 0) {
@@ -955,10 +990,10 @@
        return;
      }
 
-     // Kumpul ikut nama acara supaya senang urus (gambar tanpa acara masuk "Lain-lain")
+     // Kumpul ikut nama acara sukan, atau kategori am (kalau tiada acara), atau "Lain-lain"
      const kumpulan = new Map();
      tersaring.forEach(row => {
-       const nama = row.sukan?.nama_acara || "Lain-lain";
+       const nama = row.sukan?.nama_acara || row.kategori_am || "Lain-lain";
        if (!kumpulan.has(nama)) kumpulan.set(nama, []);
        kumpulan.get(nama).push(row);
      });
@@ -1028,7 +1063,10 @@
      const file = fileInput.files[0];
      if (!file) return;
      const tajuk = document.getElementById("galeri-tajuk").value.trim();
-     const sukanId = document.getElementById("galeri-sukan").value || null;
+     const kategoriAm = document.getElementById("galeri-kategori-am").value.trim();
+     // Kalau Kategori Am diisi, abaikan Acara Sukan (saling eksklusif — gambar
+     // tak boleh sekali gus kaitan acara sukan DAN kategori am).
+     const sukanId = kategoriAm ? null : (document.getElementById("galeri-sukan").value || null);
      const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
    
      setMsg("galeri-status-msg", "Sedang muat naik...", true);
@@ -1039,11 +1077,14 @@
        tajuk: tajuk || null,
        image_path: fileName,
        sukan_id: sukanId,
+       kategori_am: kategoriAm || null,
      };
      const { error } = await sb.from("galeri").insert(payload);
      if (error) return setMsg("galeri-status-msg", "Ralat: " + error.message, false);
      setMsg("galeri-status-msg", "Gambar berjaya dimuat naik.");
      document.getElementById("form-galeri").reset();
+     document.getElementById("galeri-filter-kategori").disabled = false;
+     document.getElementById("galeri-sukan").disabled = true;
      populateGaleriSukanOptions("");
      loadGaleri();
    });
@@ -1186,4 +1227,113 @@
      const { error } = await sb.from("banner_slaid").delete().eq("id", id);
      if (error) return setMsg("slaid-status-msg", "Ralat: " + error.message, false);
      loadSlaid();
+   }
+
+   /* ================= VIDEO SOROTAN ================= */
+   let semuaVideoCache = [];
+
+   // Extract YouTube video ID dari pelbagai format link:
+   // watch?v=XXXX, youtu.be/XXXX, /embed/XXXX, /shorts/XXXX
+   function extractYoutubeId(url) {
+     if (!url) return null;
+     const patterns = [
+       /(?:youtube\.com\/watch\?v=)([\w-]{11})/,
+       /(?:youtu\.be\/)([\w-]{11})/,
+       /(?:youtube\.com\/embed\/)([\w-]{11})/,
+       /(?:youtube\.com\/shorts\/)([\w-]{11})/,
+     ];
+     for (const p of patterns) {
+       const match = url.match(p);
+       if (match) return match[1];
+     }
+     return null;
+   }
+
+   async function loadVideo() {
+     const { data, error } = await sb.from("video_karnival").select("*").order("urutan", { ascending: true });
+     const tbody = document.querySelector("#video-table tbody");
+     if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
+     semuaVideoCache = data || [];
+
+     if (semuaVideoCache.length === 0) {
+       tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Belum ada video ditambah.</td></tr>`;
+       return;
+     }
+
+     tbody.innerHTML = semuaVideoCache.map(row => {
+       const thumb = row.youtube_id
+         ? `<img src="https://img.youtube.com/vi/${row.youtube_id}/default.jpg" alt="" style="width:60px;height:45px;object-fit:cover;border-radius:4px;">`
+         : "&mdash;";
+       const aktif = row.aktif !== false;
+       const statusBadge = aktif
+         ? '<span style="color:var(--success);">● Aktif</span>'
+         : '<span style="color:var(--danger);">● Tak Aktif</span>';
+       return `<tr>
+         <td>${row.urutan}</td>
+         <td>${row.tajuk}</td>
+         <td>${thumb}</td>
+         <td>${statusBadge}</td>
+         <td class="row-actions">
+           <button class="edit" onclick="mulaEditVideo('${row.id}')">Edit</button>
+           <button class="del" onclick="deleteVideo('${row.id}')">Padam</button>
+         </td>
+       </tr>`;
+     }).join("");
+   }
+
+   function mulaEditVideo(id) {
+     const row = semuaVideoCache.find(r => r.id === id);
+     if (!row) return;
+     document.getElementById("video-id").value = row.id;
+     document.getElementById("video-tajuk").value = row.tajuk || "";
+     document.getElementById("video-url").value = row.youtube_id ? `https://youtu.be/${row.youtube_id}` : "";
+     document.getElementById("video-urutan").value = row.urutan || 0;
+     document.getElementById("video-aktif").checked = row.aktif !== false;
+     document.getElementById("video-cancel").style.display = "inline-block";
+     window.scrollTo({ top: document.getElementById("form-video").offsetTop - 20, behavior: "smooth" });
+   }
+
+   document.getElementById("video-cancel").addEventListener("click", () => {
+     document.getElementById("form-video").reset();
+     document.getElementById("video-id").value = "";
+     document.getElementById("video-aktif").checked = true;
+     document.getElementById("video-cancel").style.display = "none";
+   });
+
+   document.getElementById("form-video").addEventListener("submit", async (e) => {
+     e.preventDefault();
+     const id = document.getElementById("video-id").value;
+     const url = document.getElementById("video-url").value.trim();
+     const tajuk = document.getElementById("video-tajuk").value.trim();
+
+     const youtubeId = extractYoutubeId(url);
+     if (!youtubeId) {
+       return setMsg("video-status-msg", "Link YouTube tidak sah. Pastikan link penuh (cth: youtube.com/watch?v=... atau youtu.be/...).", false);
+     }
+
+     const payload = {
+       tajuk: tajuk,
+       youtube_id: youtubeId,
+       urutan: parseInt(document.getElementById("video-urutan").value, 10) || 0,
+       aktif: document.getElementById("video-aktif").checked,
+     };
+
+     const { error } = id
+       ? await sb.from("video_karnival").update(payload).eq("id", id)
+       : await sb.from("video_karnival").insert(payload);
+
+     if (error) return setMsg("video-status-msg", "Ralat: " + error.message, false);
+     setMsg("video-status-msg", "Video disimpan.");
+     document.getElementById("form-video").reset();
+     document.getElementById("video-id").value = "";
+     document.getElementById("video-aktif").checked = true;
+     document.getElementById("video-cancel").style.display = "none";
+     loadVideo();
+   });
+
+   async function deleteVideo(id) {
+     if (!confirm("Padam video ini?")) return;
+     const { error } = await sb.from("video_karnival").delete().eq("id", id);
+     if (error) return setMsg("video-status-msg", "Ralat: " + error.message, false);
+     loadVideo();
    }

@@ -40,6 +40,7 @@
       <button class="tab-btn" data-tab="pasukan">Pasukan</button>
       <button class="tab-btn" data-tab="info">Info</button>
       <button class="tab-btn" data-tab="galeri">Galeri</button>
+      <button class="tab-btn" data-tab="video">Video</button>
       <button class="tab-btn" data-tab="paparan">Paparan</button>
     </div>
 
@@ -383,6 +384,12 @@
           </select>
         </div>
         <div class="field full">
+          <label>ATAU Kategori Am (kalau gambar tak kaitan acara sukan)</label>
+          <input type="text" id="galeri-kategori-am" list="galeri-kategori-am-list" placeholder="cth: Pendaftaran, Majlis Perasmian">
+          <datalist id="galeri-kategori-am-list"></datalist>
+          <span class="hint" style="margin:4px 0 0;">Isi ni untuk gambar seperti pendaftaran/perasmian yang tak berkaitan acara sukan tertentu. Kalau diisi, "Acara Sukan" di atas akan diabaikan.</span>
+        </div>
+        <div class="field full">
           <label>Pilih Gambar</label>
           <input type="file" id="galeri-file" accept="image/*" required>
         </div>
@@ -408,11 +415,50 @@
           <label>Cari Tajuk</label>
           <input type="text" id="galeri-admin-search" placeholder="cth: Hari 2">
         </div>
+        <div class="field">
+          <label>Tapis Kategori Am</label>
+          <select id="galeri-admin-filter-kategori-am">
+            <option value="">-- semua kategori am --</option>
+          </select>
+        </div>
         <div class="form-actions" style="margin:0;">
           <button type="button" class="btn-cancel" id="galeri-admin-filter-reset">Reset</button>
         </div>
       </div>
       <div class="gallery-preview" id="galeri-preview"></div>
+    </div>
+
+    <!-- ---------------- VIDEO ---------------- -->
+    <div class="panel" id="panel-video">
+      <h2>Video Sorotan</h2>
+      <p class="hint">Tampal link penuh video YouTube (cth: https://www.youtube.com/watch?v=XXXX atau https://youtu.be/XXXX). Sistem akan extract ID automatik. Guna checkbox "Aktif" untuk tunjuk/sembunyi video di galeri.html tanpa perlu padam. Susun ikut "Urutan" (nombor kecil dulu).</p>
+      <form class="entry-form" id="form-video">
+        <input type="hidden" id="video-id">
+        <div class="field full">
+          <label>Tajuk Video</label>
+          <input type="text" id="video-tajuk" placeholder="cth: Perasmian Karnival Sukan 2026" required>
+        </div>
+        <div class="field full">
+          <label>Link YouTube</label>
+          <input type="text" id="video-url" placeholder="https://www.youtube.com/watch?v=..." required>
+        </div>
+        <div class="field">
+          <label>Urutan</label>
+          <input type="number" id="video-urutan" value="0" min="0">
+        </div>
+        <div class="field checkbox">
+          <input type="checkbox" id="video-aktif" checked>
+          <label>Aktif (papar di galeri.html)</label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Simpan Video</button>
+          <button type="button" class="btn-cancel" id="video-cancel" style="display:none;">Batal Edit</button>
+          <span class="status-msg" id="video-status-msg"></span>
+        </div>
+      </form>
+      <table id="video-table"><thead><tr>
+        <th>Urutan</th><th>Tajuk</th><th>Pratonton</th><th>Status</th><th></th>
+      </tr></thead><tbody></tbody></table>
     </div>
 
     <!-- ---------------- PAPARAN (banner slider & countdown) ---------------- -->

@@ -1,7 +1,9 @@
 // ============================================================
 // LOGIK HALAMAN GALERI (galeri.html)
-// Tab ikut KATEGORI SUKAN. Dalam setiap tab, gambar dikumpulkan
-// ikut NAMA ACARA (heading), gambar tanpa acara masuk "Lain-lain".
+// Tab ikut KATEGORI SUKAN *atau* KATEGORI AM (cth: Pendaftaran,
+// Majlis Perasmian — gambar yang tak kaitan acara sukan tertentu).
+// Dalam setiap tab, gambar dikumpulkan ikut NAMA ACARA / KATEGORI AM
+// (heading), gambar tanpa acara/kategori masuk "Lain-lain".
 // ============================================================
 
 let semuaGaleri = [];
@@ -33,18 +35,27 @@ async function muatkanGaleri() {
     return;
   }
 
-  // Senarai kategori unik yang ada gambar, susun ikut abjad
-  const kategoriSeen = new Set();
+  // Senarai kategori sukan unik yang ada gambar, susun ikut abjad
+  const kategoriSukanSeen = new Set();
+  // Senarai kategori am unik yang ada gambar, susun ikut abjad
+  const kategoriAmSeen = new Set();
   semuaGaleri.forEach((g) => {
-    if (g.sukan?.kategori_sukan) kategoriSeen.add(g.sukan.kategori_sukan);
+    if (g.sukan?.kategori_sukan) kategoriSukanSeen.add(g.sukan.kategori_sukan);
+    if (g.kategori_am) kategoriAmSeen.add(g.kategori_am);
   });
-  const senaraiKategori = [...kategoriSeen].sort();
+  const senaraiKategoriSukan = [...kategoriSukanSeen].sort();
+  const senaraiKategoriAm = [...kategoriAmSeen].sort();
 
-  const adaTanpaKategori = semuaGaleri.some((g) => !g.sukan?.kategori_sukan);
+  const adaTanpaKategori = semuaGaleri.some((g) => !g.sukan?.kategori_sukan && !g.kategori_am);
 
+  // Guna prefix "sukan:" / "am:" pada data-kategori supaya tak konflik kalau
+  // kebetulan nama kategori sukan sama dengan nama kategori am
   const tabButtons = [`<button class="subtab-btn ${kategoriAktif === "semua" ? "active" : ""}" data-kategori="semua">Semua</button>`]
-    .concat(senaraiKategori.map((k) => `
-      <button class="subtab-btn ${kategoriAktif === k ? "active" : ""}" data-kategori="${escapeHtml(k)}">${escapeHtml(k)}</button>
+    .concat(senaraiKategoriSukan.map((k) => `
+      <button class="subtab-btn ${kategoriAktif === "sukan:" + k ? "active" : ""}" data-kategori="sukan:${escapeHtml(k)}">${escapeHtml(k)}</button>
+    `))
+    .concat(senaraiKategoriAm.map((k) => `
+      <button class="subtab-btn ${kategoriAktif === "am:" + k ? "active" : ""}" data-kategori="am:${escapeHtml(k)}">${escapeHtml(k)}</button>
     `));
 
   if (adaTanpaKategori) {
@@ -52,7 +63,7 @@ async function muatkanGaleri() {
   }
 
   // Kalau cuma satu kumpulan je (takda kategori langsung), tak payah papar tab
-  elTabs.innerHTML = senaraiKategori.length === 0 ? "" : tabButtons.join("");
+  elTabs.innerHTML = (senaraiKategoriSukan.length === 0 && senaraiKategoriAm.length === 0) ? "" : tabButtons.join("");
 
   elTabs.querySelectorAll(".subtab-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -68,8 +79,16 @@ async function muatkanGaleri() {
 
 function getGaleriTersaring() {
   if (kategoriAktif === "semua") return semuaGaleri;
-  if (kategoriAktif === "lain") return semuaGaleri.filter((g) => !g.sukan?.kategori_sukan);
-  return semuaGaleri.filter((g) => g.sukan?.kategori_sukan === kategoriAktif);
+  if (kategoriAktif === "lain") return semuaGaleri.filter((g) => !g.sukan?.kategori_sukan && !g.kategori_am);
+  if (kategoriAktif.startsWith("sukan:")) {
+    const nilai = kategoriAktif.slice("sukan:".length);
+    return semuaGaleri.filter((g) => g.sukan?.kategori_sukan === nilai);
+  }
+  if (kategoriAktif.startsWith("am:")) {
+    const nilai = kategoriAktif.slice("am:".length);
+    return semuaGaleri.filter((g) => g.kategori_am === nilai);
+  }
+  return semuaGaleri;
 }
 
 function paparkanGaleri() {
@@ -82,10 +101,11 @@ function paparkanGaleri() {
     return;
   }
 
-  // Kumpulkan ikut nama acara (gambar tanpa acara masuk "Lain-lain")
-  const kumpulan = new Map(); // nama acara -> senarai gambar
+  // Kumpulkan ikut nama acara sukan, atau kategori am (kalau tiada acara),
+  // atau "Lain-lain" (kalau tiada kedua-duanya)
+  const kumpulan = new Map(); // nama -> senarai gambar
   tersaring.forEach((g) => {
-    const nama = g.sukan?.nama_acara || "Lain-lain";
+    const nama = g.sukan?.nama_acara || g.kategori_am || "Lain-lain";
     if (!kumpulan.has(nama)) kumpulan.set(nama, []);
     kumpulan.get(nama).push(g);
   });

@@ -1,0 +1,193 @@
+/* ============================================================
+   KARNIVAL SUKAN KKM 2026 — Halaman Galeri (galeri.html)
+   Gaya khusus untuk galeri.html sahaja: grid gambar, lightbox,
+   dan section video. Guna sama-sama dengan style.css (untuk
+   warna/font teras & komponen kongsi seperti .subtab-bar).
+   ============================================================ */
+
+/* ---------------- GALLERY GRID ---------------- */
+.gallery-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.gallery-group-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--navy-900);
+  border-left: 3px solid var(--teal-500);
+  padding-left: 12px;
+  margin-bottom: 14px;
+}
+
+.gallery-grid-inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.gallery-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  background: var(--navy-800);
+  cursor: pointer;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.gallery-item:hover img { transform: scale(1.06); }
+
+.gallery-item .cap {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 10px 12px;
+  background: linear-gradient(0deg, rgba(8,28,36,0.85), transparent);
+  color: var(--cream-50);
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.gallery-item:hover .cap { opacity: 1; }
+.gallery-item:focus-visible { outline: 3px solid var(--gold-500); outline-offset: 2px; }
+
+/* Kat skrin sentuh takda hover, jadi caption sentiasa nampak */
+@media (hover: none) {
+  .gallery-item .cap { opacity: 1; }
+}
+
+/* ---------------- LIGHTBOX (gambar) ---------------- */
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(8, 28, 36, 0.94);
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.lightbox.open { display: flex; }
+
+.lightbox-img {
+  max-width: min(900px, 90vw);
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: var(--shadow-deep);
+}
+
+.lightbox-cap {
+  position: absolute;
+  bottom: 28px;
+  left: 0; right: 0;
+  text-align: center;
+  color: var(--cream-50);
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  padding: 0 60px;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 18px; right: 24px;
+  background: none;
+  border: none;
+  color: var(--cream-50);
+  font-size: 34px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(247,244,236,0.1);
+  border: 1px solid rgba(247,244,236,0.25);
+  color: var(--cream-50);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-nav:hover { background: rgba(247,244,236,0.2); }
+.lightbox-prev { left: 16px; }
+.lightbox-next { right: 16px; }
+
+@media (max-width: 620px) {
+  .lightbox { padding: 16px; }
+  .lightbox-nav { width: 38px; height: 38px; }
+  .lightbox-cap { padding: 0 44px; font-size: 12px; }
+}
+
+/* ---------------- VIDEO SOROTAN ---------------- */
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.video-card {
+  background: #fff;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(15,44,58,0.06);
+}
+
+/* Bungkusan responsive 16:9 untuk iframe YouTube */
+.video-embed-wrap {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* nisbah 16:9 */
+  background: var(--navy-950);
+}
+
+.video-embed-wrap iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.video-card-body {
+  padding: 14px 16px 16px;
+}
+
+.video-card-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--navy-900);
+  text-transform: uppercase;
+}
+
+/* ---------------- RESPONSIVE (khusus galeri) ---------------- */
+@media (max-width: 860px) {
+  .gallery-grid-inner { grid-template-columns: repeat(2, 1fr); }
+  .video-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .gallery-grid-inner { grid-template-columns: repeat(2, 1fr); }
+}

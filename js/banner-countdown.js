@@ -139,7 +139,7 @@ function setupBannerSlider(slaidSenarai) {
 function updateCountdownBesar() {
   // Tarikh karnival — laraskan mengikut tarikh sebenar
   const mula = new Date("2026-08-17T00:00:00");
-  const tamat = new Date("2026-08-22T23:59:59");
+  const tamat = new Date("2026-08-22T09:30:00");
   const sekarang = new Date();
 
   const hariEl = document.getElementById("cd-hari");
@@ -163,7 +163,7 @@ function updateCountdownBesar() {
 
   if (sekarang >= mula && sekarang <= tamat) {
     sasaran = tamat;
-    statusTeks = "Sehingga jelajah tamat";
+    statusTeks = "Sehingga Majlis Perasmian Penutup Bermula";
   }
 
   const beza = sasaran - sekarang;

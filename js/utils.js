@@ -46,6 +46,23 @@ function statusLabel(status) {
   return map[status] || status;
 }
 
+// Kira status sebenar acara secara automatik ikut tarikh & masa semasa.
+// "ditangguhkan" sentiasa manual — tak akan diganti oleh logik auto ni.
+// (Dikongsi oleh index.js & sukan.js)
+function kiraStatusAuto(a) {
+  if (a.status === "ditangguhkan") return "ditangguhkan";
+  if (!a.tarikh) return a.status || "akan_datang";
+
+  const now = new Date();
+  const mula = new Date(`${a.tarikh}T${a.masa || "00:00"}`);
+  const tarikhAkhir = a.tarikh_akhir || a.tarikh;
+  const akhir = new Date(`${tarikhAkhir}T${a.masa_tamat || a.masa || "23:59"}`);
+
+  if (now < mula) return "akan_datang";
+  if (now > akhir) return "selesai";
+  return "sedang_berlangsung";
+}
+
 function escapeHtml(str) {
   if (!str) return "";
   return str.replace(/[&<>"']/g, (c) => ({

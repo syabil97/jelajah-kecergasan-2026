@@ -47,17 +47,30 @@ function formatJulatTarikh(a) {
   return `${formatTarikh(a.tarikh)}${a.masa ? " &middot; " + formatMasa(a.masa) : ""}`;
 }
 
+// Keutamaan susunan status untuk paparan di halaman utama:
+// sedang berlangsung dulu, kemudian akan datang. (Acara selesai/ditangguhkan
+// tak perlu tonjol di sini — ditapis keluar di bawah.)
+const STATUS_ORDER_INDEX = {
+  sedang_berlangsung: 0,
+  akan_datang: 1,
+};
+
 async function muatkanAcaraTerkini() {
   const el = document.getElementById("acara-terkini");
-  const hariIni = new Date().toISOString().slice(0, 10);
+  // Ambil dari 2 hari lepas supaya acara yang bermula sebelum hari ini tapi
+  // masih berlangsung (tarikh_akhir belum diisi / berlanjutan) tetap ditangkap,
+  // memandangkan status sebenar dikira semula ikut masa di bawah (kiraStatusAuto),
+  // bukan sekadar diharap kepada medan `tarikh_akhir` dalam DB.
+  const dueTarikh = new Date();
+  dueTarikh.setDate(dueTarikh.getDate() - 2);
+  const tarikhMula = dueTarikh.toISOString().slice(0, 10);
 
   const { data, error } = await supabaseClient
     .from("sukan")
     .select("*")
-    .or(`tarikh.gte.${hariIni},tarikh_akhir.gte.${hariIni}`)
+    .gte("tarikh", tarikhMula)
     .order("tarikh", { ascending: true })
-    .order("masa", { ascending: true })
-    .limit(6);
+    .order("masa", { ascending: true });
 
   if (error) {
     el.innerHTML = `<div class="empty-state">Gagal memuatkan acara.</div>`;
@@ -65,12 +78,30 @@ async function muatkanAcaraTerkini() {
     return;
   }
 
-  if (!data || data.length === 0) {
+  // Kira status sebenar (bukan guna medan `status` mentah dari DB) supaya
+  // acara yang sedang berlangsung sekarang betul-betul terpapar sebagai
+  // "Sedang Berlangsung", walaupun medan status dalam DB belum dikemas kini.
+  const relevan = (data || [])
+    .map((a) => ({ ...a, statusAuto: kiraStatusAuto(a) }))
+    .filter((a) => a.statusAuto === "sedang_berlangsung" || a.statusAuto === "akan_datang");
+
+  const disusun = relevan
+    .sort((a, b) => {
+      const sa = STATUS_ORDER_INDEX[a.statusAuto] ?? 99;
+      const sb = STATUS_ORDER_INDEX[b.statusAuto] ?? 99;
+      if (sa !== sb) return sa - sb;
+      const ta = `${a.tarikh || ""}T${a.masa || "00:00"}`;
+      const tb = `${b.tarikh || ""}T${b.masa || "00:00"}`;
+      return ta.localeCompare(tb);
+    })
+    .slice(0, 6);
+
+  if (disusun.length === 0) {
     el.innerHTML = `<div class="empty-state">Tiada acara akan datang buat masa ini.</div>`;
     return;
   }
 
-  el.innerHTML = data.map((a) => `
+  el.innerHTML = disusun.map((a) => `
     <div class="card event-card">
       <span class="event-date">${formatJulatTarikh(a)}</span>
       <span class="event-name">${escapeHtml(a.nama_acara)}</span>
@@ -78,7 +109,7 @@ async function muatkanAcaraTerkini() {
         ${a.kategori_sukan ? `<span>${escapeHtml(a.kategori_sukan)}</span>` : ""}
         ${a.lokasi ? `<span>&middot; ${escapeHtml(a.lokasi)}</span>` : ""}
       </div>
-      <span class="badge badge-${a.status}">${statusLabel(a.status)}</span>
+      <span class="badge badge-${a.statusAuto}">${statusLabel(a.statusAuto)}</span>
     </div>
   `).join("");
 }

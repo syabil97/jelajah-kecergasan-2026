@@ -50,22 +50,6 @@ function formatJulatTarikh(a) {
   return `${formatTarikh(a.tarikh)}${masaTeks}`;
 }
 
-// Kira status sebenar acara secara automatik ikut tarikh & masa semasa.
-// "ditangguhkan" sentiasa manual — tak akan diganti oleh logik auto ni.
-function kiraStatusAuto(a) {
-  if (a.status === "ditangguhkan") return "ditangguhkan";
-  if (!a.tarikh) return a.status || "akan_datang";
-
-  const now = new Date();
-  const mula = new Date(`${a.tarikh}T${a.masa || "00:00"}`);
-  const tarikhAkhir = a.tarikh_akhir || a.tarikh;
-  const akhir = new Date(`${tarikhAkhir}T${a.masa_tamat || a.masa || "23:59"}`);
-
-  if (now < mula) return "akan_datang";
-  if (now > akhir) return "selesai";
-  return "sedang_berlangsung";
-}
-
 // Senarai kategori unik dari data, ikut susunan pertama kali dijumpai.
 // Kategori yang semua acaranya sudah "selesai" akan diletak di belah kanan (paling akhir).
 function senaraiKategori() {

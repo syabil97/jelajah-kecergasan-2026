@@ -814,17 +814,50 @@
      loadPingat();
    }
    
+   /* Helper: elak bug tarikh "bergeser" akibat penukaran timezone.
+      Semua tarikh/masa dikira mengikut zon Malaysia (Asia/Kuala_Lumpur, +8)
+      secara eksplisit, tak kira timezone browser peranti admin. */
+   function tarikhMasaInputMalaysia(isoString) {
+     // Pulangkan format "YYYY-MM-DDTHH:MM" (untuk isi input datetime-local)
+     if (!isoString) return "";
+     const bahagian = new Intl.DateTimeFormat("en-CA", {
+       timeZone: "Asia/Kuala_Lumpur",
+       year: "numeric", month: "2-digit", day: "2-digit",
+       hour: "2-digit", minute: "2-digit", hour12: false,
+     }).formatToParts(new Date(isoString)).reduce((o, p) => (o[p.type] = p.value, o), {});
+     return `${bahagian.year}-${bahagian.month}-${bahagian.day}T${bahagian.hour}:${bahagian.minute}`;
+   }
+   function tarikhSahajaMalaysia(isoString) {
+     if (!isoString) return "";
+     return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date(isoString));
+   }
+   function isoDariInputDatetimeMalaysia(datetimeLocalValue) {
+     // datetimeLocalValue cth "2026-08-16T09:30" - anggap ia waktu Malaysia (+8), tak kira timezone peranti
+     if (!datetimeLocalValue) return new Date().toISOString();
+     return `${datetimeLocalValue}:00+08:00`;
+   }
+
    /* ================= INFO ================= */
+   let semuaInfoCache = [];
    async function loadInfo() {
      const { data, error } = await sb.from("info").select("*").order("dibuat_pada", { ascending: false });
      const tbody = document.querySelector("#info-table tbody");
      tbody.innerHTML = "";
-     if (error) { tbody.innerHTML = `<tr><td colspan="4" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
-     if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="empty-note">Belum ada info.</td></tr>`; return; }
+     if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Ralat: ${error.message}</td></tr>`; return; }
+     semuaInfoCache = data || [];
+     if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="empty-note">Belum ada info.</td></tr>`; return; }
      data.forEach(row => {
-       const tarikh = row.dibuat_pada ? new Date(row.dibuat_pada).toLocaleDateString("ms-MY") : "";
+       const tarikh = row.dibuat_pada
+         ? new Date(row.dibuat_pada).toLocaleString("ms-MY", { timeZone: "Asia/Kuala_Lumpur", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+         : "";
+       let gambarCell = "";
+       if (row.gambar_path) {
+         const { data: urlData } = sb.storage.from(GALERI_BUCKET).getPublicUrl(row.gambar_path);
+         gambarCell = `<img src="${urlData.publicUrl}" alt="" style="width:60px;height:40px;object-fit:cover;border-radius:4px;">`;
+       }
        tbody.innerHTML += `<tr>
          <td>${row.tajuk}</td>
+         <td>${gambarCell}</td>
          <td>${row.penting ? '<span class="badge-penting">PENTING</span>' : ""}</td>
          <td>${tarikh}</td>
          <td class="row-actions">
@@ -838,11 +871,29 @@
      e.preventDefault();
      const id = document.getElementById("info-id").value;
      const tarikhInput = document.getElementById("info-tarikh").value;
+     const file = document.getElementById("info-file").files[0];
+
+     let gambarPath = id ? (semuaInfoCache.find(r => r.id === id)?.gambar_path || null) : null;
+     const buangCb = document.getElementById("info-gambar-buang");
+     if (buangCb && buangCb.checked) {
+       if (gambarPath) await sb.storage.from(GALERI_BUCKET).remove([gambarPath]);
+       gambarPath = null;
+     }
+
+     if (file) {
+       const fileName = `info/${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
+       setMsg("info-status-msg", "Sedang muat naik gambar...", true);
+       const { error: uploadError } = await sb.storage.from(GALERI_BUCKET).upload(fileName, file);
+       if (uploadError) return setMsg("info-status-msg", "Ralat muat naik: " + uploadError.message, false);
+       gambarPath = fileName;
+     }
+
      const payload = {
        tajuk: document.getElementById("info-tajuk").value.trim(),
        kandungan: document.getElementById("info-kandungan").value.trim(),
        penting: document.getElementById("info-penting").checked,
-       dibuat_pada: tarikhInput ? new Date(tarikhInput + "T00:00:00").toISOString() : new Date().toISOString(),
+       gambar_path: gambarPath,
+       dibuat_pada: isoDariInputDatetimeMalaysia(tarikhInput),
      };
      const { error } = id
        ? await sb.from("info").update(payload).eq("id", id)
@@ -858,7 +909,9 @@
      document.getElementById("info-tajuk").value = row.tajuk || "";
      document.getElementById("info-kandungan").value = row.kandungan || "";
      document.getElementById("info-penting").checked = !!row.penting;
-     document.getElementById("info-tarikh").value = row.dibuat_pada ? row.dibuat_pada.slice(0, 10) : "";
+     document.getElementById("info-tarikh").value = tarikhMasaInputMalaysia(row.dibuat_pada);
+     document.getElementById("info-file").value = "";
+     renderInfoGambarPreview(row.gambar_path);
      document.getElementById("info-cancel").style.display = "inline-block";
    }
    function resetInfoForm() {
@@ -866,11 +919,24 @@
      document.getElementById("info-id").value = "";
      document.getElementById("info-tarikh").value = "";
      document.getElementById("info-cancel").style.display = "none";
+     renderInfoGambarPreview(null);
+   }
+   function renderInfoGambarPreview(gambarPath) {
+     const el = document.getElementById("info-gambar-preview");
+     if (!gambarPath) { el.innerHTML = ""; return; }
+     const { data: urlData } = sb.storage.from(GALERI_BUCKET).getPublicUrl(gambarPath);
+     el.innerHTML = `
+       <img src="${urlData.publicUrl}" alt="" style="width:120px;height:80px;object-fit:cover;border-radius:6px;display:block;margin-bottom:6px;">
+       <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+         <input type="checkbox" id="info-gambar-buang" style="width:auto;"> Buang gambar sedia ada
+       </label>`;
    }
    document.getElementById("info-cancel").addEventListener("click", resetInfoForm);
    
    async function deleteInfo(id) {
      if (!confirm("Padam info ini?")) return;
+     const row = semuaInfoCache.find(r => r.id === id);
+     if (row?.gambar_path) await sb.storage.from(GALERI_BUCKET).remove([row.gambar_path]);
      const { error } = await sb.from("info").delete().eq("id", id);
      if (error) return setMsg("info-status-msg", "Ralat: " + error.message, false);
      loadInfo();

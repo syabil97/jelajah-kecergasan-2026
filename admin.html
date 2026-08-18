@@ -346,9 +346,15 @@
           <label>Kandungan</label>
           <textarea id="info-kandungan" required></textarea>
         </div>
+        <div class="field full">
+          <label>Gambar (opsyenal &mdash; kalau diisi, papar sebagai laporan/buletin bergambar di info.html)</label>
+          <input type="file" id="info-file" accept="image/*">
+          <span class="hint" style="margin:4px 0 0;">Kosongkan kalau ini pengumuman ringkas biasa (tanpa gambar).</span>
+          <div id="info-gambar-preview" style="margin-top:8px;"></div>
+        </div>
         <div class="field">
-          <label>Tarikh</label>
-          <input type="date" id="info-tarikh">
+          <label>Tarikh & Masa</label>
+          <input type="datetime-local" id="info-tarikh">
         </div>
         <div class="field checkbox">
           <input type="checkbox" id="info-penting">
@@ -360,7 +366,7 @@
           <span class="status-msg" id="info-status-msg"></span>
         </div>
       </form>
-      <table id="info-table"><thead><tr><th>Tajuk</th><th></th><th>Tarikh</th><th></th></tr></thead><tbody></tbody></table>
+      <table id="info-table"><thead><tr><th>Tajuk</th><th>Gambar</th><th></th><th>Tarikh</th><th></th></tr></thead><tbody></tbody></table>
     </div>
 
     <!-- ---------------- GALERI ---------------- -->

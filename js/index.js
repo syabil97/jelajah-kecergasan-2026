@@ -2,6 +2,11 @@
 // LOGIK HALAMAN UTAMA (index.html)
 // ============================================================
 
+// Helper: elak bug tarikh "bergeser" akibat penukaran timezone (kira ikut Asia/Kuala_Lumpur, +8)
+function tarikhMalaysia(isoString) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date(isoString));
+}
+
 async function muatkanMiniScoreboard() {
   const el = document.getElementById("mini-scoreboard");
   const { data, error } = await supabaseClient
@@ -97,14 +102,26 @@ async function muatkanInfoTerkini() {
     return;
   }
 
-  el.innerHTML = data.map((p) => `
-    <div class="info-item ${p.penting ? "penting" : ""}">
-      ${p.penting ? '<span class="tag">Pengumuman Penting</span>' : ""}
-      <h3>${escapeHtml(p.tajuk)}</h3>
-      <p>${escapeHtml(p.kandungan)}</p>
-      <time>${formatTarikh(p.dibuat_pada.slice(0, 10))}</time>
-    </div>
-  `).join("");
+  el.innerHTML = data.map((p) => {
+    const ringkasan = p.kandungan.length > 140 ? p.kandungan.slice(0, 140).trim() + "…" : p.kandungan;
+    const gambarHtml = p.gambar_path
+      ? (() => {
+          const { data: urlData } = supabaseClient.storage.from("galeri-karnival").getPublicUrl(p.gambar_path);
+          return `<img class="info-card-img" src="${urlData.publicUrl}" alt="${escapeHtml(p.tajuk)}" loading="lazy">`;
+        })()
+      : "";
+    return `
+      <div class="info-card ${p.penting ? "penting" : ""}">
+        ${gambarHtml}
+        <div class="info-card-body">
+          ${p.penting ? '<span class="tag">Pengumuman Penting</span>' : ""}
+          <h3>${escapeHtml(p.tajuk)}</h3>
+          <p>${escapeHtml(ringkasan)}</p>
+          <time>${formatTarikh(tarikhMalaysia(p.dibuat_pada))}</time>
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 async function muatkanStatistikRingkasan() {

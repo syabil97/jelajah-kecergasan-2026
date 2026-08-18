@@ -228,30 +228,8 @@
    /* Nota: Gaya .gallery-* dan .lightbox* dah dipindah ke galeri.css
       (khusus untuk galeri.html sahaja, sama macam index.css untuk index.html) */
 
-   /* ---------------- INFO / ANNOUNCEMENTS ---------------- */
-   .info-item {
-     border-left: 3px solid var(--teal-500);
-     padding: 4px 0 4px 18px;
-     margin-bottom: 22px;
-   }
-   
-   .info-item.penting { border-left-color: var(--gold-500); }
-   
-   .info-item .tag {
-     font-family: var(--font-display);
-     font-size: 11px;
-     letter-spacing: 0.1em;
-     text-transform: uppercase;
-     color: var(--gold-500);
-     margin-bottom: 4px;
-     display: block;
-   }
-   
-   .info-item h3 { font-size: 18px; margin-bottom: 6px; }
-   .info-item p { color: var(--ink-600); font-size: 14px; margin: 0; }
-   .info-item time { font-size: 12px; color: var(--ink-600); opacity: 0.7; }
-   
-   /* Nota: Gaya .site-footer/.footer-logos (footer.html) dah
+   /* Nota: Gaya .info-item (info.html) dah dipindah ke info.css.
+      Gaya .site-footer/.footer-logos (footer.html) dah
       dipindah ke partials.css */
 
    /* ---------------- EMPTY / LOADING STATES ---------------- */

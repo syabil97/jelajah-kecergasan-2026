@@ -1,0 +1,87 @@
+/* ============================================================
+   KARNIVAL SUKAN KKM 2026 — Info & Pengumuman (info.html)
+   Gaya khusus untuk senarai info/pengumuman. Guna sama-sama
+   dengan style.css (untuk warna/font teras) & partials.css.
+   Cth: <link rel="stylesheet" href="css/info.css">
+   ============================================================ */
+
+/* ---------------- INFO / ANNOUNCEMENTS ---------------- */
+.info-item {
+  border-left: 3px solid var(--teal-500);
+  padding: 4px 0 4px 18px;
+  margin-bottom: 22px;
+}
+
+.info-item.penting { border-left-color: var(--gold-500); }
+
+.info-item .tag {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-500);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.info-item h3 { font-size: 18px; margin-bottom: 6px; }
+.info-item p { color: var(--ink-600); font-size: 14px; margin: 0; }
+.info-item time { font-size: 12px; color: var(--ink-600); opacity: 0.7; }
+
+/* ---------------- BULETIN / LAPORAN (dengan gambar) ---------------- */
+.info-buletin {
+  border-left: none;
+  padding: 0;
+  margin-bottom: 32px;
+  background: #fff;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(15,44,58,0.06);
+}
+
+.info-buletin.penting {
+  border: 1px solid rgba(242,183,5,0.35);
+}
+
+.info-buletin-img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+
+.info-buletin-body {
+  padding: 20px 22px 18px;
+}
+
+.info-buletin-body .tag { margin-bottom: 8px; }
+
+.info-buletin-body h3 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+
+.info-buletin-body p {
+  color: var(--ink-600);
+  font-size: 14.5px;
+  margin: 0 0 12px;
+  text-align: justify;
+}
+
+.info-buletin-body p:last-of-type { margin-bottom: 10px; }
+
+.info-buletin-body time {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-600);
+  opacity: 0.7;
+  padding-top: 6px;
+  border-top: 1px solid rgba(15,44,58,0.08);
+}
+
+@media (max-width: 620px) {
+  .info-buletin-body { padding: 16px 18px; }
+  .info-buletin-body h3 { font-size: 18px; }
+}

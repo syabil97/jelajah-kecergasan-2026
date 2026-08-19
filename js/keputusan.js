@@ -17,8 +17,8 @@ async function muatkanPerlawanan() {
     supabaseClient
       .from("perlawanan_penuh")
       .select("*")
-      .order("tarikh", { ascending: true })
-      .order("masa", { ascending: true }),
+      .order("tarikh", { ascending: false })
+      .order("masa", { ascending: false }),
     supabaseClient
       .from("sukan")
       .select("*, pingat(jenis, pasukan(nama, warna, logo_url))")

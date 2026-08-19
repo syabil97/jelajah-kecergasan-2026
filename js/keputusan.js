@@ -42,11 +42,23 @@ async function muatkanPerlawanan() {
     return;
   }
 
-  // Bina senarai kategori sukan unik (gabungan dari kedua-dua sumber), susun ikut abjad
-  const kategoriList = [...new Set([
+  // Bina senarai kategori sukan unik (gabungan dari kedua-dua sumber),
+  // susun ikut keutamaan yang ditetapkan; kategori lain (jika ada) ikut abjad di belakang
+  const SUSUNAN_KATEGORI = ["Tenpin Boling", "Bola Sepak", "Bola Jaring", "Badminton", "Catur"];
+
+  const kategoriUnik = [...new Set([
     ...semuaPerlawanan.map((m) => m.kategori_sukan),
     ...semuaAcaraKedudukan.map((s) => s.kategori_sukan),
-  ])].filter(Boolean).sort();
+  ])].filter(Boolean);
+
+  const kategoriList = kategoriUnik.sort((a, b) => {
+    const idxA = SUSUNAN_KATEGORI.indexOf(a);
+    const idxB = SUSUNAN_KATEGORI.indexOf(b);
+    if (idxA === -1 && idxB === -1) return a.localeCompare(b);
+    if (idxA === -1) return 1;
+    if (idxB === -1) return -1;
+    return idxA - idxB;
+  });
 
   kategoriAktif = kategoriList[0];
 

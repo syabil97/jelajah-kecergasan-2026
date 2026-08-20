@@ -710,6 +710,7 @@
      if (curFilterPasukan) filterPasukanSel.value = curFilterPasukan;
 
      renderPingatTable();
+     renderKiraanKontijen();
    }
 
    function namaPasukanPingat(id) {
@@ -768,6 +769,142 @@
      pingatTableFilterJenisNilai = "";
      pingatTableFilterPasukanNilai = "";
      renderPingatTable();
+   });
+
+   /* ================= KIRAAN PINGAT PENUH KONTIJEN (tab "Kiraan Pingat Penuh") ================= */
+   const URUTAN_JENIS_PINGAT = { emas: 1, perak: 2, gangsa: 3 };
+   const JENIS_PINGAT_RINGKAS = { emas: "Emas", perak: "Perak", gangsa: "Gangsa" };
+
+   // Kumpul + susun semua pingat ikut kontijen. Dikongsi oleh paparan jadual & export Excel.
+   function kiraKumpulanKontijen() {
+     const kumpulan = {}; // pasukan_id -> { nama, emas, perak, gangsa, senarai: [] }
+     (semuaPingatCache || []).forEach(row => {
+       const pid = row.pasukan_id || "tiada";
+       if (!kumpulan[pid]) {
+         kumpulan[pid] = { nama: namaPasukanPingat(row.pasukan_id), emas: 0, perak: 0, gangsa: 0, senarai: [] };
+       }
+       const kump = kumpulan[pid];
+       if (row.jenis === "emas") kump.emas++;
+       else if (row.jenis === "perak") kump.perak++;
+       else if (row.jenis === "gangsa") kump.gangsa++;
+       kump.senarai.push({
+         jenis: row.jenis,
+         sukan: namaAcaraPingat(row.sukan_id),
+         kategori: row.kategori || ""
+       });
+     });
+
+     // Susun senarai pingat dalam setiap kontijen ikut jenis (emas > perak > gangsa)
+     Object.values(kumpulan).forEach(kump => {
+       kump.senarai.sort((a, b) => (URUTAN_JENIS_PINGAT[a.jenis] || 9) - (URUTAN_JENIS_PINGAT[b.jenis] || 9));
+       kump.jumlah = kump.emas + kump.perak + kump.gangsa;
+     });
+
+     // Susun kontijen ikut jumlah pungutan pingat TERBANYAK dahulu
+     // (tie-break: emas > perak > gangsa > nama pasukan)
+     return Object.values(kumpulan).sort((a, b) => {
+       if (b.jumlah !== a.jumlah) return b.jumlah - a.jumlah;
+       if (b.emas !== a.emas) return b.emas - a.emas;
+       if (b.perak !== a.perak) return b.perak - a.perak;
+       if (b.gangsa !== a.gangsa) return b.gangsa - a.gangsa;
+       return a.nama.localeCompare(b.nama);
+     });
+   }
+
+   // Paparkan jadual dalam tab "Kiraan Pingat Penuh" — cell Kontijen & Jumlah digabung (rowspan)
+   function renderKiraanKontijen() {
+     const tbody = document.querySelector("#kiraan-table tbody");
+     if (!tbody) return;
+     const senaraiKontijen = kiraKumpulanKontijen();
+
+     if (senaraiKontijen.length === 0) {
+       tbody.innerHTML = `<tr><td colspan="4" class="empty-note">Belum ada rekod pingat.</td></tr>`;
+       return;
+     }
+
+     let html = "";
+     senaraiKontijen.forEach(kump => {
+       const bilBaris = Math.max(kump.senarai.length, 1);
+       const ringkasan = `Jumlah: ${kump.jumlah} &nbsp;(🥇 ${kump.emas} / 🥈 ${kump.perak} / 🥉 ${kump.gangsa})`;
+
+       if (kump.senarai.length === 0) {
+         html += `<tr>
+             <td rowspan="1" style="font-weight:600;vertical-align:top;">${kump.nama}<br><span class="hint" style="margin:4px 0 0;">${ringkasan}</span></td>
+             <td colspan="3" class="empty-note">Tiada pingat direkodkan.</td>
+           </tr>`;
+         return;
+       }
+
+       kump.senarai.forEach((p, idx) => {
+         html += "<tr>";
+         if (idx === 0) {
+           html += `<td rowspan="${bilBaris}" style="font-weight:600;vertical-align:top;border-right:2px solid var(--border);">
+               ${kump.nama}<br><span class="hint" style="margin:4px 0 0;">${ringkasan}</span>
+             </td>`;
+         }
+         html += `<td>${jenisPingatLabel[p.jenis] || JENIS_PINGAT_RINGKAS[p.jenis] || p.jenis}</td>
+             <td>${p.sukan}</td>
+             <td>${p.kategori || "-"}</td>
+           </tr>`;
+       });
+     });
+
+     tbody.innerHTML = html;
+   }
+
+   document.getElementById("pingat-export-excel").addEventListener("click", () => {
+     if (typeof XLSX === "undefined") {
+       alert("Pustaka Excel gagal dimuatkan. Sila semak sambungan internet dan cuba lagi.");
+       return;
+     }
+     if (!semuaPingatCache || semuaPingatCache.length === 0) {
+       setMsg("kiraan-status-msg", "Tiada rekod pingat untuk dieksport.", false);
+       return;
+     }
+
+     const senaraiKontijen = kiraKumpulanKontijen();
+
+     // Bina data untuk sheet Excel
+     const TAJUK = "Kiraan Pingat Penuh Kontijen - Jelajah Kecergasan 2026";
+     const aoa = [];
+     const merges = [];
+
+     aoa.push([TAJUK]);
+     merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } });
+     aoa.push([]);
+     aoa.push(["Kontijen", "Jenis Pingat", "Sukan", "Kategori"]);
+
+     senaraiKontijen.forEach(kump => {
+       const barisMula = aoa.length;
+       if (kump.senarai.length === 0) {
+         aoa.push([kump.nama, "-", "-", "-"]);
+       } else {
+         kump.senarai.forEach((p, idx) => {
+           aoa.push([
+             idx === 0 ? kump.nama : "",
+             JENIS_PINGAT_RINGKAS[p.jenis] || p.jenis,
+             p.sukan,
+             p.kategori
+           ]);
+         });
+         if (kump.senarai.length > 1) {
+           merges.push({ s: { r: barisMula, c: 0 }, e: { r: barisMula + kump.senarai.length - 1, c: 0 } });
+         }
+       }
+       aoa.push(["", `Jumlah: ${kump.jumlah} (Emas ${kump.emas} / Perak ${kump.perak} / Gangsa ${kump.gangsa})`, "", ""]);
+       aoa.push([]); // baris kosong pemisah antara kontijen
+     });
+
+     const ws = XLSX.utils.aoa_to_sheet(aoa);
+     ws["!merges"] = merges;
+     ws["!cols"] = [{ wch: 24 }, { wch: 34 }, { wch: 34 }, { wch: 20 }];
+
+     const wb = XLSX.utils.book_new();
+     XLSX.utils.book_append_sheet(wb, ws, "Kiraan Pingat");
+
+     const tarikhFail = new Date().toISOString().slice(0, 10);
+     XLSX.writeFile(wb, `Kiraan-Pingat-Penuh-Kontijen-Jelajah-Kecergasan-2026-${tarikhFail}.xlsx`);
+     setMsg("kiraan-status-msg", "Fail Excel berjaya dimuat turun.");
    });
    
    document.getElementById("form-pingat").addEventListener("submit", async (e) => {

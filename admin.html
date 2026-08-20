@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Jelajah Kecergasan 2026 Peringkat Kebangsaan</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
@@ -42,6 +43,7 @@
       <button class="tab-btn" data-tab="galeri">Galeri</button>
       <button class="tab-btn" data-tab="video">Video</button>
       <button class="tab-btn" data-tab="paparan">Paparan</button>
+      <button class="tab-btn" data-tab="kiraan">Kiraan Pingat Penuh</button>
     </div>
 
     <!-- ---------------- KATEGORI SUKAN ---------------- -->
@@ -304,6 +306,19 @@
       </div>
       <table id="pingat-table"><thead><tr>
         <th>Acara</th><th>Kategori</th><th>Pasukan</th><th>Jenis Pingat</th><th></th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+
+    <!-- ---------------- KIRAAN KONTIJEN (kiraan pingat penuh per kontijen) ---------------- -->
+    <div class="panel" id="panel-kiraan">
+      <h2>Kiraan Pingat Penuh Kontijen</h2>
+      <p class="hint">Senarai penuh pingat setiap kontijen, disusun ikut jumlah pungutan pingat terbanyak. Kemaskini automatik ikut data dalam tab Pingat.</p>
+      <div class="form-actions" style="margin-bottom:14px;">
+        <button type="button" class="btn-primary" id="pingat-export-excel">📊 Export Excel</button>
+        <span class="status-msg" id="kiraan-status-msg"></span>
+      </div>
+      <table id="kiraan-table"><thead><tr>
+        <th>Kontijen</th><th>Jenis Pingat</th><th>Sukan</th><th>Kategori</th>
       </tr></thead><tbody></tbody></table>
     </div>
 

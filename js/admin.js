@@ -811,8 +811,43 @@
      });
    }
 
+   // Paparkan jumlah keseluruhan pingat (emas/perak/gangsa) merentasi SEMUA kontijen —
+   // bukan pecahan ikut kontijen, tapi total am untuk seluruh karnival.
+   function renderTotalKeseluruhanPingat() {
+     const el = document.getElementById("kiraan-total-keseluruhan");
+     if (!el) return;
+
+     let emas = 0, perak = 0, gangsa = 0;
+     (semuaPingatCache || []).forEach(row => {
+       if (row.jenis === "emas") emas++;
+       else if (row.jenis === "perak") perak++;
+       else if (row.jenis === "gangsa") gangsa++;
+     });
+     const jumlah = emas + perak + gangsa;
+
+     el.innerHTML = `
+       <div class="kiraan-stat-card emas">
+         <div class="stat-top"><span class="stat-label">Emas</span><span class="stat-emoji">🥇</span></div>
+         <div class="stat-value">${emas}</div>
+       </div>
+       <div class="kiraan-stat-card perak">
+         <div class="stat-top"><span class="stat-label">Perak</span><span class="stat-emoji">🥈</span></div>
+         <div class="stat-value">${perak}</div>
+       </div>
+       <div class="kiraan-stat-card gangsa">
+         <div class="stat-top"><span class="stat-label">Gangsa</span><span class="stat-emoji">🥉</span></div>
+         <div class="stat-value">${gangsa}</div>
+       </div>
+       <div class="kiraan-stat-card jumlah">
+         <div class="stat-top"><span class="stat-label">Jumlah Keseluruhan</span><span class="stat-emoji">🏆</span></div>
+         <div class="stat-value">${jumlah}</div>
+       </div>
+     `;
+   }
+
    // Paparkan jadual dalam tab "Kiraan Pingat Penuh" — cell Kontijen & Jumlah digabung (rowspan)
    function renderKiraanKontijen() {
+     renderTotalKeseluruhanPingat();
      const tbody = document.querySelector("#kiraan-table tbody");
      if (!tbody) return;
      const senaraiKontijen = kiraKumpulanKontijen();
@@ -1263,28 +1298,42 @@
    document.getElementById("form-galeri").addEventListener("submit", async (e) => {
      e.preventDefault();
      const fileInput = document.getElementById("galeri-file");
-     const file = fileInput.files[0];
-     if (!file) return;
+     const files = Array.from(fileInput.files || []);
+     if (files.length === 0) return;
      const tajuk = document.getElementById("galeri-tajuk").value.trim();
      const kategoriAm = document.getElementById("galeri-kategori-am").value.trim();
      // Kalau Kategori Am diisi, abaikan Acara Sukan (saling eksklusif — gambar
      // tak boleh sekali gus kaitan acara sukan DAN kategori am).
      const sukanId = kategoriAm ? null : (document.getElementById("galeri-sukan").value || null);
-     const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
-   
-     setMsg("galeri-status-msg", "Sedang muat naik...", true);
-     const { error: uploadError } = await sb.storage.from(GALERI_BUCKET).upload(fileName, file);
-     if (uploadError) return setMsg("galeri-status-msg", "Ralat muat naik: " + uploadError.message, false);
-   
-     const payload = {
-       tajuk: tajuk || null,
-       image_path: fileName,
-       sukan_id: sukanId,
-       kategori_am: kategoriAm || null,
-     };
-     const { error } = await sb.from("galeri").insert(payload);
-     if (error) return setMsg("galeri-status-msg", "Ralat: " + error.message, false);
-     setMsg("galeri-status-msg", "Gambar berjaya dimuat naik.");
+
+     let berjaya = 0;
+     const ralatSenarai = [];
+
+     for (let i = 0; i < files.length; i++) {
+       const file = files[i];
+       setMsg("galeri-status-msg", `Sedang muat naik... (${i + 1}/${files.length})`, true);
+
+       const fileName = `${Date.now()}_${i}_${file.name.replace(/\s+/g, "_")}`;
+       const { error: uploadError } = await sb.storage.from(GALERI_BUCKET).upload(fileName, file);
+       if (uploadError) { ralatSenarai.push(`${file.name}: ${uploadError.message}`); continue; }
+
+       const payload = {
+         tajuk: tajuk || null,
+         image_path: fileName,
+         sukan_id: sukanId,
+         kategori_am: kategoriAm || null,
+       };
+       const { error } = await sb.from("galeri").insert(payload);
+       if (error) { ralatSenarai.push(`${file.name}: ${error.message}`); continue; }
+       berjaya++;
+     }
+
+     if (ralatSenarai.length > 0) {
+       setMsg("galeri-status-msg", `${berjaya} berjaya, ${ralatSenarai.length} gagal: ${ralatSenarai.join("; ")}`, false);
+     } else {
+       setMsg("galeri-status-msg", `${berjaya} gambar berjaya dimuat naik.`);
+     }
+
      document.getElementById("form-galeri").reset();
      document.getElementById("galeri-filter-kategori").disabled = false;
      document.getElementById("galeri-sukan").disabled = true;

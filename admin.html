@@ -313,6 +313,7 @@
     <div class="panel" id="panel-kiraan">
       <h2>Kiraan Pingat Penuh Kontijen</h2>
       <p class="hint">Senarai penuh pingat setiap kontijen, disusun ikut jumlah pungutan pingat terbanyak. Kemaskini automatik ikut data dalam tab Pingat.</p>
+      <div class="kiraan-dashboard" id="kiraan-total-keseluruhan"></div>
       <div class="form-actions" style="margin-bottom:14px;">
         <button type="button" class="btn-primary" id="pingat-export-excel">📊 Export Excel</button>
         <span class="status-msg" id="kiraan-status-msg"></span>
@@ -412,7 +413,8 @@
         </div>
         <div class="field full">
           <label>Pilih Gambar</label>
-          <input type="file" id="galeri-file" accept="image/*" required>
+          <input type="file" id="galeri-file" accept="image/*" multiple required>
+          <span class="hint" style="margin:4px 0 0;">Boleh pilih lebih daripada satu gambar sekali gus — semua akan guna tajuk/kategori yang sama.</span>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn-primary">Muat Naik Gambar</button>

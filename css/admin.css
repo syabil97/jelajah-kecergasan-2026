@@ -68,3 +68,61 @@ tr:hover{background:#fafbfc;}
 .gallery-preview .caption-actions button{font-size:11px;color:var(--navy);border:none;background:none;cursor:pointer;padding:0;}
 .gallery-preview .caption-actions button.save-btn{color:var(--success);}
 .gallery-preview .caption-actions button:last-child{color:var(--danger);}
+
+.kiraan-dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.kiraan-stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.05);position:relative;overflow:hidden;}
+.kiraan-stat-card::before{content:"";position:absolute;top:0;left:0;width:4px;height:100%;background:var(--stat-color,var(--navy));}
+.kiraan-stat-card .stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.kiraan-stat-card .stat-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;}
+.kiraan-stat-card .stat-emoji{font-size:22px;line-height:1;}
+.kiraan-stat-card .stat-value{font-size:30px;font-weight:700;color:var(--text);line-height:1;}
+.kiraan-stat-card.emas{--stat-color:#c9962c;}
+.kiraan-stat-card.perak{--stat-color:#9aa5b1;}
+.kiraan-stat-card.gangsa{--stat-color:#a9673a;}
+.kiraan-stat-card.jumlah{--stat-color:var(--navy);background:var(--navy);}
+.kiraan-stat-card.jumlah .stat-label{color:#9fb3c8;}
+.kiraan-stat-card.jumlah .stat-value{color:#fff;}
+
+@media (max-width:760px){
+  .kiraan-dashboard{grid-template-columns:repeat(2,1fr);}
+}
+
+/* ---------------- RESPONSIVE MOBILE ---------------- */
+@media (max-width:640px){
+  header{padding:12px 16px;flex-wrap:wrap;gap:8px;}
+  header h1{font-size:15px;}
+  header .sub{font-size:11px;}
+  #logoutBtn{padding:5px 10px;font-size:12px;}
+
+  .container{margin:14px auto;padding:0 12px;}
+
+  #loginScreen{margin:40px auto;padding:24px 20px;max-width:calc(100% - 32px);}
+
+  .tabs{gap:4px;}
+  .tab-btn{padding:8px 12px;font-size:13px;flex:1 1 auto;text-align:center;}
+
+  .panel{padding:14px;}
+  .panel h2{font-size:15px;}
+
+  form.entry-form{grid-template-columns:1fr;gap:10px;}
+  .field.full{grid-column:auto;}
+  .form-actions{flex-wrap:wrap;}
+  .btn-primary,.btn-cancel{width:100%;}
+  .form-actions .status-msg{width:100%;}
+
+  /* Jadual: bagi scroll mendatar dalam wrapper supaya tak pecah layout */
+  table{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;}
+  th,td{padding:7px 8px;font-size:12px;}
+
+  .gallery-preview-inner{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;}
+
+  .kiraan-dashboard{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .kiraan-stat-card{padding:12px 14px;}
+  .kiraan-stat-card .stat-value{font-size:24px;}
+  .kiraan-stat-card .stat-emoji{font-size:18px;}
+}
+
+@media (max-width:400px){
+  .kiraan-dashboard{grid-template-columns:1fr 1fr;}
+  .tab-btn{font-size:12px;padding:7px 8px;}
+}

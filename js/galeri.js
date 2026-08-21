@@ -117,7 +117,7 @@ function paparkanGaleri() {
     return a.localeCompare(b);
   });
 
-  senaraiUntukLightbox = tersaring;
+  senaraiUntukLightbox = namaAcaraList.flatMap((nama) => kumpulan.get(nama));
   let offset = 0;
 
   elGrid.innerHTML = namaAcaraList.map((nama) => {

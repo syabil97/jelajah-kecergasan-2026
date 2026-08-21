@@ -778,6 +778,13 @@
    // Kumpul + susun semua pingat ikut kontijen. Dikongsi oleh paparan jadual & export Excel.
    function kiraKumpulanKontijen() {
      const kumpulan = {}; // pasukan_id -> { nama, emas, perak, gangsa, senarai: [] }
+
+     // Mulakan dengan SEMUA kontijen (termasuk yang belum ada pingat langsung),
+     // supaya kontijen kosong tetap disenaraikan dalam kiraan pingat penuh.
+     (semuaPingatPasukanCache || []).forEach(p => {
+       kumpulan[p.id] = { nama: p.nama, emas: 0, perak: 0, gangsa: 0, senarai: [] };
+     });
+
      (semuaPingatCache || []).forEach(row => {
        const pid = row.pasukan_id || "tiada";
        if (!kumpulan[pid]) {

@@ -22,7 +22,22 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 const GALERI_BUCKET = "galeri-karnival";
 
 // Fungsi bantuan: tukar path gambar Storage -> URL CDN penuh
-function getGaleriUrl(path) {
-  const { data } = supabaseClient.storage.from(GALERI_BUCKET).getPublicUrl(path);
+// Parameter kedua (options) boleh guna untuk resize gambar supaya
+// tak load gambar saiz asal (jimat banyak egress).
+// Contoh: getGaleriUrl(path, { width: 400, height: 300, quality: 70 })
+function getGaleriUrl(path, options) {
+  const { data } = supabaseClient.storage
+    .from(GALERI_BUCKET)
+    .getPublicUrl(path, options ? { transform: options } : undefined);
   return data.publicUrl;
+}
+
+// Versi kecil untuk grid thumbnail (dipapar dalam kotak 4:3 yang kecil)
+function getGaleriThumbUrl(path) {
+  return getGaleriUrl(path);
+}
+
+// Versi lebih besar untuk lightbox (papar penuh, tak perlu saiz asal)
+function getGaleriBesarUrl(path) {
+  return getGaleriUrl(path);
 }

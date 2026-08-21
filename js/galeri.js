@@ -11,6 +11,9 @@ let kategoriAktif = "semua";
 let senaraiUntukLightbox = [];
 let indeksLightboxSemasa = 0;
 
+const HAD_PAPAR_AWAL = 12; // bilangan gambar dipapar dulu setiap kumpulan
+let hadPaparan = new Map(); // nama kumpulan -> bilangan gambar dipapar setakat ini
+
 async function muatkanGaleri() {
   const elTabs = document.getElementById("subtab-bar");
   const elGrid = document.getElementById("galeri-grid");
@@ -68,6 +71,7 @@ async function muatkanGaleri() {
   elTabs.querySelectorAll(".subtab-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       kategoriAktif = btn.dataset.kategori;
+      hadPaparan = new Map(); // reset pagination bila tukar tab
       elTabs.querySelectorAll(".subtab-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       paparkanGaleri();
@@ -121,9 +125,14 @@ function paparkanGaleri() {
   let offset = 0;
 
   elGrid.innerHTML = namaAcaraList.map((nama) => {
-    const gambarAcara = kumpulan.get(nama);
+    const gambarAcaraSemua = kumpulan.get(nama);
     const mulaOffset = offset;
-    offset += gambarAcara.length;
+    offset += gambarAcaraSemua.length;
+
+    // Had bilangan gambar dipapar untuk kumpulan ni (default HAD_PAPAR_AWAL)
+    const hadSemasa = hadPaparan.get(nama) || HAD_PAPAR_AWAL;
+    const gambarAcara = gambarAcaraSemua.slice(0, hadSemasa);
+    const bakiLagi = gambarAcaraSemua.length - gambarAcara.length;
 
     return `
       <div class="gallery-group">
@@ -131,11 +140,16 @@ function paparkanGaleri() {
         <div class="gallery-grid-inner">
           ${gambarAcara.map((g, i) => `
             <div class="gallery-item" data-index="${mulaOffset + i}" role="button" tabindex="0" aria-label="Besarkan gambar">
-              <img src="${getGaleriUrl(g.image_path)}" alt="${escapeHtml(g.tajuk || "Gambar karnival")}" loading="lazy">
+              <img src="${getGaleriThumbUrl(g.image_path)}" alt="${escapeHtml(g.tajuk || "Gambar karnival")}" loading="lazy">
               <div class="cap">${escapeHtml(g.tajuk || "Gambar Karnival")}</div>
             </div>
           `).join("")}
         </div>
+        ${bakiLagi > 0 ? `
+          <button class="btn-papar-lagi" data-nama="${escapeHtml(nama)}">
+            Papar Lagi (${bakiLagi} lagi gambar)
+          </button>
+        ` : ""}
       </div>
     `;
   }).join("");
@@ -145,6 +159,15 @@ function paparkanGaleri() {
     item.addEventListener("click", buka);
     item.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); buka(); }
+    });
+  });
+
+  elGrid.querySelectorAll(".btn-papar-lagi").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const nama = btn.dataset.nama;
+      const hadBaru = (hadPaparan.get(nama) || HAD_PAPAR_AWAL) + HAD_PAPAR_AWAL;
+      hadPaparan.set(nama, hadBaru);
+      paparkanGaleri();
     });
   });
 }
@@ -169,7 +192,7 @@ function tutupLightbox() {
 function paparkanLightbox() {
   const g = senaraiUntukLightbox[indeksLightboxSemasa];
   if (!g) return;
-  lightboxImgEl.src = getGaleriUrl(g.image_path);
+  lightboxImgEl.src = getGaleriBesarUrl(g.image_path);
   lightboxImgEl.alt = g.tajuk || "Gambar karnival";
   lightboxCapEl.textContent = g.tajuk || "";
 }
